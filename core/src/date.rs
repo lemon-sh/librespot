@@ -16,6 +16,10 @@ impl From<ComponentRange> for Error {
     }
 }
 
+/// A date-time value representing a point in time.
+///
+/// Wraps an [`OffsetDateTime`] and provides conversions to/from
+/// timestamps, ISO 8601 strings, and protobuf date messages.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Date(pub OffsetDateTime);
 
@@ -27,27 +31,33 @@ impl Deref for Date {
 }
 
 impl Date {
+    /// Returns the date as a Unix timestamp in milliseconds.
     pub fn as_timestamp_ms(&self) -> i64 {
         (self.0.unix_timestamp_nanos() / 1_000_000) as i64
     }
 
+    /// Creates a `Date` from a Unix timestamp in milliseconds.
     pub fn from_timestamp_ms(timestamp: i64) -> Result<Self, Error> {
         let date_time = OffsetDateTime::from_unix_timestamp_nanos(timestamp as i128 * 1_000_000)?;
         Ok(Self(date_time))
     }
 
+    /// Returns the date as an `OffsetDateTime` in UTC.
     pub fn as_utc(&self) -> OffsetDateTime {
         self.0
     }
 
+    /// Creates a `Date` from a `PrimitiveDateTime`, assuming UTC.
     pub fn from_utc(date_time: PrimitiveDateTime) -> Self {
         Self(date_time.assume_utc())
     }
 
+    /// Returns the current UTC date and time.
     pub fn now_utc() -> Self {
         Self(OffsetDateTime::now_utc())
     }
 
+    /// Parses an ISO 8601 formatted string into a `Date`.
     pub fn from_iso8601(input: &str) -> Result<Self, Error> {
         let date_time = OffsetDateTime::parse(input, &Iso8601::DEFAULT)?;
         Ok(Self(date_time))

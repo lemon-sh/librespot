@@ -6,11 +6,17 @@ use std::{mem, path::PathBuf, str::FromStr, time::Duration};
 pub use crate::dither::{DithererBuilder, TriangularDitherer, mk_ditherer};
 use crate::{convert::i24, player::duration_to_coefficient};
 
+/// Audio bitrate setting for playback.
+///
+/// Higher bitrates use more bandwidth but provide better audio quality.
 #[derive(Clone, Copy, Debug, Hash, PartialOrd, Ord, PartialEq, Eq, Default)]
 pub enum Bitrate {
+    /// 96 kbps. Lowest quality, suitable for very constrained connections.
     Bitrate96,
+    /// 160 kbps. Default balance between quality and bandwidth.
     #[default]
     Bitrate160,
+    /// 320 kbps. Highest quality, requires more bandwidth.
     Bitrate320,
 }
 
@@ -26,13 +32,22 @@ impl FromStr for Bitrate {
     }
 }
 
+/// Output audio format for sample conversion.
+///
+/// Determines the PCM format sent to the audio backend.
 #[derive(Clone, Copy, Debug, Hash, PartialOrd, Ord, PartialEq, Eq, Default)]
 pub enum AudioFormat {
+    /// 64-bit floating point.
     F64,
+    /// 32-bit floating point.
     F32,
+    /// 32-bit signed integer (24-bit audio padded to 32 bits).
     S32,
+    /// 24-bit signed integer packed in 32-bit word.
     S24,
+    /// 24-bit signed integer in a 3-byte array.
     S24_3,
+    /// 16-bit signed integer. Default format.
     #[default]
     S16,
 }
@@ -53,6 +68,7 @@ impl FromStr for AudioFormat {
 }
 
 impl AudioFormat {
+    /// Returns the size in bytes of a single sample in this format.
     // not used by all backends
     #[allow(dead_code)]
     pub fn size(&self) -> usize {
@@ -66,10 +82,16 @@ impl AudioFormat {
     }
 }
 
+/// Type of volume normalisation to apply.
+///
+/// Determines whether to use track-level or album-level gain values.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum NormalisationType {
+    /// Use album-level gain values. Provides consistent loudness across an album.
     Album,
+    /// Use track-level gain values. Normalises each track independently.
     Track,
+    /// Automatically choose between track and album based on context.
     #[default]
     Auto,
 }
@@ -86,9 +108,14 @@ impl FromStr for NormalisationType {
     }
 }
 
+/// Method used for volume normalisation.
+///
+/// Controls how gain is applied to audio samples.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum NormalisationMethod {
+    /// Simple gain multiplication with peak limiting to prevent clipping.
     Basic,
+    /// Dynamic range compression with soft-knee limiter for smoother results.
     #[default]
     Dynamic,
 }
@@ -161,12 +188,19 @@ impl Default for PlayerConfig {
     }
 }
 
-// fields are intended for volume control range in dB
+/// Volume control curve type.
+///
+/// Controls how linear volume values map to perceived loudness.
+/// Fields specify the dB range for the volume control curve.
 #[derive(Clone, Copy, Debug)]
 pub enum VolumeCtrl {
+    /// Cubic mapping with the given dB range. Mimics ALSA's native mixer curve.
     Cubic(f64),
+    /// Fixed volume (no attenuation).
     Fixed,
+    /// Linear mapping (direct proportionality).
     Linear,
+    /// Logarithmic mapping with the given dB range. Best perceptual linearity.
     Log(f64),
 }
 
@@ -184,11 +218,14 @@ impl Default for VolumeCtrl {
 }
 
 impl VolumeCtrl {
+    /// Maximum volume value (u16::MAX = 65535).
     pub const MAX_VOLUME: u16 = u16::MAX;
 
+    /// Default dB range for logarithmic and cubic volume curves (60 dB).
     // Taken from: https://www.dr-lex.be/info-stuff/volumecontrols.html
     pub const DEFAULT_DB_RANGE: f64 = 60.0;
 
+    /// Parses a volume control type from a string with a custom dB range.
     pub fn from_str_with_range(s: &str, db_range: f64) -> Result<Self, <Self as FromStr>::Err> {
         use self::VolumeCtrl::*;
         match s.to_lowercase().as_ref() {

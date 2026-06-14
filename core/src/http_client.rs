@@ -43,12 +43,17 @@ use crate::{
 // The 30 seconds interval is documented by Spotify, but the calls per interval
 // is a guesstimate and probably subject to licensing (purchasing extra calls)
 // and may change at any time.
+/// The interval between rate limit resets.
 pub const RATE_LIMIT_INTERVAL: Duration = Duration::from_secs(30);
+/// The maximum wait time for a rate-limited request.
 pub const RATE_LIMIT_MAX_WAIT: Duration = Duration::from_secs(10);
+/// The number of API calls allowed per rate limit interval.
 pub const RATE_LIMIT_CALLS_PER_INTERVAL: u32 = 300;
 
+/// Errors specific to the HTTP client.
 #[derive(Debug, Error)]
 pub enum HttpClientError {
+    /// The server returned a non-success status code.
     #[error("Response status code: {0}")]
     StatusCode(hyper::StatusCode),
 }
@@ -101,6 +106,7 @@ impl From<HttpClientError> for Error {
 
 type HyperClient = Client<ProxyConnector<HttpsConnector<HttpConnector>>, Full<bytes::Bytes>>;
 
+/// HTTP client with per-host rate limiting and optional proxy support.
 pub struct HttpClient {
     user_agent: HeaderValue,
     proxy_url: Option<Url>,
@@ -111,6 +117,7 @@ pub struct HttpClient {
 }
 
 impl HttpClient {
+    /// Creates a new `HttpClient` with optional proxy configuration.
     pub fn new(proxy_url: Option<&Url>) -> Self {
         let zero_str = String::from("0");
         let os_version = os_version();
@@ -185,6 +192,7 @@ impl HttpClient {
             .get_or_init(|| Self::try_create_hyper_client(self.proxy_url.as_ref()).unwrap())
     }
 
+    /// Sends an HTTP request and returns the response, retrying on rate limits.
     pub async fn request(&self, req: Request<Bytes>) -> Result<Response<Incoming>, Error> {
         debug!("Requesting {}", req.uri());
 
@@ -228,15 +236,18 @@ impl HttpClient {
         }
     }
 
+    /// Sends an HTTP request and returns the response body as bytes.
     pub async fn request_body(&self, req: Request<Bytes>) -> Result<Bytes, Error> {
         let response = self.request(req).await?;
         Ok(response.into_body().collect().await?.to_bytes())
     }
 
+    /// Sends an HTTP request and returns a streaming response.
     pub fn request_stream(&self, req: Request<Bytes>) -> Result<IntoStream<ResponseFuture>, Error> {
         Ok(self.request_fut(req)?.into_stream())
     }
 
+    /// Sends an HTTP request and returns the response future.
     pub fn request_fut(&self, mut req: Request<Bytes>) -> Result<ResponseFuture, Error> {
         let headers_mut = req.headers_mut();
         headers_mut.insert(USER_AGENT, self.user_agent.clone());
@@ -263,6 +274,7 @@ impl HttpClient {
         Ok(self.hyper_client().request(req.map(Full::new)))
     }
 
+    /// Parses the `Retry-After` or `X-RateLimit-Next` header to determine the wait duration.
     pub fn get_retry_after(headers: &HeaderMap<HeaderValue>) -> Option<Duration> {
         let now = Date::now_utc().as_timestamp_ms();
 

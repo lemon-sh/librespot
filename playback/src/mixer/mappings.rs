@@ -1,12 +1,20 @@
 use super::VolumeCtrl;
 use crate::player::db_to_ratio;
 
+/// Trait for mapping between linear and non-linear volume scales.
+///
+/// Provides volume scaling that better matches human perception of loudness.
 pub trait MappedCtrl {
+    /// Maps a linear volume (0–65535) to a scaled value (0.0–1.0).
     fn to_mapped(&self, volume: u16) -> f64;
+    /// Unmaps a scaled value (0.0–1.0) back to a linear volume (0–65535).
     fn as_unmapped(&self, mapped_volume: f64) -> u16;
 
+    /// Returns the dB range for this volume control curve.
     fn db_range(&self) -> f64;
+    /// Sets the dB range for this volume control curve.
     fn set_db_range(&mut self, new_db_range: f64);
+    /// Returns `true` if the dB range is valid for this curve type.
     fn range_ok(&self) -> bool;
 }
 
@@ -93,15 +101,24 @@ impl MappedCtrl for VolumeCtrl {
     }
 }
 
+/// Trait for volume mapping algorithms.
+///
+/// Provides conversion between linear and non-linear volume scales
+/// for different dB ranges.
 pub trait VolumeMapping {
+    /// Maps a linear volume (0.0–1.0) to a perceptual scale.
     fn linear_to_mapped(unmapped_volume: f64, db_range: f64) -> f64;
+    /// Unmaps a perceptual volume back to linear scale (0.0–1.0).
     fn mapped_to_linear(mapped_volume: f64, db_range: f64) -> f64;
 }
 
-// Volume conversion taken from: https://www.dr-lex.be/info-stuff/volumecontrols.html#ideal2
-//
-// As the human auditory system has a logarithmic sensitivity curve, this
-// mapping results in a near linear loudness experience with the listener.
+/// Logarithmic volume mapping.
+///
+/// Maps linear volume to a logarithmic scale, providing near-linear
+/// loudness perception. Based on the human auditory system's logarithmic
+/// sensitivity curve.
+///
+/// Reference: <https://www.dr-lex.be/info-stuff/volumecontrols.html#ideal2>
 pub struct LogMapping {}
 impl VolumeMapping for LogMapping {
     fn linear_to_mapped(normalized_volume: f64, db_range: f64) -> f64 {
@@ -123,18 +140,12 @@ impl LogMapping {
     }
 }
 
-// Ported from: https://github.com/alsa-project/alsa-utils/blob/master/alsamixer/volume_mapping.c
-// which in turn was inspired by: https://www.robotplanet.dk/audio/audio_gui_design/
-//
-// Though this mapping is computationally less expensive than the logarithmic
-// mapping, it really does not matter as librespot memoizes the mapped value.
-// Use this mapping if you have some reason to mimic Alsa's native mixer or
-// prefer a more granular control in the upper volume range.
-//
-// Note: https://www.dr-lex.be/info-stuff/volumecontrols.html#ideal3 shows
-// better approximations to the logarithmic curve but because we only intend
-// to mimic Alsa here, we do not implement them. If your desire is to use a
-// logarithmic mapping, then use that volume control.
+/// Cubic volume mapping.
+///
+/// Maps linear volume using a cubic function. This mimics ALSA's native
+/// mixer curve and provides more granular control in the upper volume range.
+///
+/// Reference: <https://github.com/alsa-project/alsa-utils/blob/master/alsamixer/volume_mapping.c>
 pub struct CubicMapping {}
 impl VolumeMapping for CubicMapping {
     fn linear_to_mapped(normalized_volume: f64, db_range: f64) -> f64 {

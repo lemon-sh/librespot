@@ -15,13 +15,19 @@ use super::file::AudioFiles;
 
 use librespot_core::{Error, Session, SpotifyUri, date::Date, session::UserData};
 
+/// Result type for resolving an [`AudioItem`].
 pub type AudioItemResult = Result<AudioItem, Error>;
 
+/// A cover art image with its URL.
 #[derive(Debug, Clone)]
 pub struct CoverImage {
+    /// The URL to the image.
     pub url: String,
+    /// The size category.
     pub size: ImageSize,
+    /// The width in pixels.
     pub width: i32,
+    /// The height in pixels.
     pub height: i32,
 }
 
@@ -59,27 +65,45 @@ pub struct AudioItem {
 /// Type-specific metadata for an [`AudioItem`].
 #[derive(Debug, Clone)]
 pub enum UniqueFields {
+    /// Metadata for a Spotify track.
     Track {
+        /// The artists with their roles.
         artists: ArtistsWithRole,
+        /// The album name.
         album: String,
+        /// The album artist names.
         album_artists: Vec<String>,
+        /// Popularity score (0–100).
         popularity: u8,
+        /// The track number within its disc.
         number: u32,
+        /// The disc number within the album.
         disc_number: u32,
     },
+    /// Metadata for a locally loaded track.
     Local {
         // artists / album_artists can't be a Vec here, they are retrieved from metadata as a String,
         // and we cannot make any assumptions about them being e.g. comma-separated
+        /// The artist names.
         artists: Option<String>,
+        /// The album name.
         album: Option<String>,
+        /// The album artist names.
         album_artists: Option<String>,
+        /// The track number.
         number: Option<u32>,
+        /// The disc number.
         disc_number: Option<u32>,
+        /// The file path.
         path: PathBuf,
     },
+    /// Metadata for a podcast episode.
     Episode {
+        /// The episode description.
         description: String,
+        /// The publication date.
         publish_time: Date,
+        /// The show name.
         show_name: String,
     },
 }

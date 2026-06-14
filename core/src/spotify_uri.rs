@@ -21,10 +21,13 @@ const SPOTIFY_ITEM_TYPE_TRACK: &str = "track";
 const SPOTIFY_ITEM_TYPE_LOCAL: &str = "local";
 const SPOTIFY_ITEM_TYPE_UNKNOWN: &str = "unknown";
 
+/// Errors that can occur when parsing Spotify URIs.
 #[derive(Debug, Error, Clone, Copy, PartialEq, Eq)]
 pub enum SpotifyUriError {
+    /// The URI does not match the expected `spotify:type:id` format.
     #[error("not a valid Spotify URI")]
     InvalidFormat,
+    /// The URI scheme is not `spotify`.
     #[error("URI does not belong to Spotify")]
     InvalidRoot,
 }
@@ -35,6 +38,7 @@ impl From<SpotifyUriError> for Error {
     }
 }
 
+/// A convenience type alias for `Result<SpotifyUri, Error>`.
 pub type SpotifyUriResult = Result<SpotifyUri, Error>;
 
 /// A parsed Spotify URI with its item type.
@@ -44,33 +48,54 @@ pub type SpotifyUriResult = Result<SpotifyUri, Error>;
 /// as [`SpotifyUri::Unknown`].
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub enum SpotifyUri {
+    /// An album URI (`spotify:album:{id}`).
     Album {
+        /// The album's Spotify ID.
         id: SpotifyId,
     },
+    /// An artist URI (`spotify:artist:{id}`).
     Artist {
+        /// The artist's Spotify ID.
         id: SpotifyId,
     },
+    /// An episode URI (`spotify:episode:{id}`).
     Episode {
+        /// The episode's Spotify ID.
         id: SpotifyId,
     },
+    /// A playlist URI (`spotify:playlist:{id}` or `spotify:user:{user}:playlist:{id}`).
     Playlist {
+        /// The playlist owner's username, if named.
         user: Option<String>,
+        /// The playlist's Spotify ID.
         id: SpotifyId,
     },
+    /// A show/podcast URI (`spotify:show:{id}`).
     Show {
+        /// The show's Spotify ID.
         id: SpotifyId,
     },
+    /// A track URI (`spotify:track:{id}`).
     Track {
+        /// The track's Spotify ID.
         id: SpotifyId,
     },
+    /// A local file URI (`spotify:local:{artist}:{album}:{track}:{duration}`).
     Local {
+        /// The artist name.
         artist: String,
+        /// The album title.
         album_title: String,
+        /// The track title.
         track_title: String,
+        /// The track duration.
         duration: std::time::Duration,
     },
+    /// An unrecognized URI type.
     Unknown {
+        /// The item type string (e.g., `"arbitrarywhatever"`).
         kind: Cow<'static, str>,
+        /// The raw ID string.
         id: String,
     },
 }

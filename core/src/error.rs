@@ -44,54 +44,71 @@ pub struct Error {
 /// Each variant has a numeric discriminant matching the gRPC specification.
 #[derive(Clone, Copy, Debug, Eq, Error, Hash, Ord, PartialEq, PartialOrd)]
 pub enum ErrorKind {
+    /// The operation was cancelled by the caller.
     #[error("The operation was cancelled by the caller")]
     Cancelled = 1,
 
+    /// Unknown error.
     #[error("Unknown error")]
     Unknown = 2,
 
+    /// Client specified an invalid argument.
     #[error("Client specified an invalid argument")]
     InvalidArgument = 3,
 
+    /// Deadline expired before operation could complete.
     #[error("Deadline expired before operation could complete")]
     DeadlineExceeded = 4,
 
+    /// Requested entity was not found.
     #[error("Requested entity was not found")]
     NotFound = 5,
 
+    /// Attempt to create entity that already exists.
     #[error("Attempt to create entity that already exists")]
     AlreadyExists = 6,
 
+    /// Permission denied.
     #[error("Permission denied")]
     PermissionDenied = 7,
 
+    /// No valid authentication credentials.
     #[error("No valid authentication credentials")]
     Unauthenticated = 16,
 
+    /// Resource has been exhausted.
     #[error("Resource has been exhausted")]
     ResourceExhausted = 8,
 
+    /// Invalid state.
     #[error("Invalid state")]
     FailedPrecondition = 9,
 
+    /// Operation aborted.
     #[error("Operation aborted")]
     Aborted = 10,
 
+    /// Operation attempted past the valid range.
     #[error("Operation attempted past the valid range")]
     OutOfRange = 11,
 
+    /// Not implemented.
     #[error("Not implemented")]
     Unimplemented = 12,
 
+    /// Internal error.
     #[error("Internal error")]
     Internal = 13,
 
+    /// Service unavailable.
     #[error("Service unavailable")]
     Unavailable = 14,
 
+    /// Unrecoverable data loss or corruption.
     #[error("Unrecoverable data loss or corruption")]
     DataLoss = 15,
 
+    /// Operation must not be used.
     #[error("Operation must not be used")]
     DoNotUse = -1,
 }
@@ -106,6 +123,7 @@ impl fmt::Display for ErrorMessage {
 }
 
 impl Error {
+    /// Creates a new error with the given kind and source error.
     pub fn new<E>(kind: ErrorKind, error: E) -> Error
     where
         E: Into<Box<dyn error::Error + Send + Sync>>,
@@ -116,6 +134,7 @@ impl Error {
         }
     }
 
+    /// Creates an `Aborted` error.
     pub fn aborted<E>(error: E) -> Error
     where
         E: Into<Box<dyn error::Error + Send + Sync>>,
@@ -126,6 +145,7 @@ impl Error {
         }
     }
 
+    /// Creates an `AlreadyExists` error.
     pub fn already_exists<E>(error: E) -> Error
     where
         E: Into<Box<dyn error::Error + Send + Sync>>,
@@ -136,6 +156,7 @@ impl Error {
         }
     }
 
+    /// Creates a `Cancelled` error.
     pub fn cancelled<E>(error: E) -> Error
     where
         E: Into<Box<dyn error::Error + Send + Sync>>,
@@ -146,6 +167,7 @@ impl Error {
         }
     }
 
+    /// Creates a `DataLoss` error.
     pub fn data_loss<E>(error: E) -> Error
     where
         E: Into<Box<dyn error::Error + Send + Sync>>,
@@ -156,6 +178,7 @@ impl Error {
         }
     }
 
+    /// Creates a `DeadlineExceeded` error.
     pub fn deadline_exceeded<E>(error: E) -> Error
     where
         E: Into<Box<dyn error::Error + Send + Sync>>,
@@ -166,6 +189,7 @@ impl Error {
         }
     }
 
+    /// Creates a `DoNotUse` error.
     pub fn do_not_use<E>(error: E) -> Error
     where
         E: Into<Box<dyn error::Error + Send + Sync>>,
@@ -176,6 +200,7 @@ impl Error {
         }
     }
 
+    /// Creates a `FailedPrecondition` error.
     pub fn failed_precondition<E>(error: E) -> Error
     where
         E: Into<Box<dyn error::Error + Send + Sync>>,
@@ -186,6 +211,7 @@ impl Error {
         }
     }
 
+    /// Creates an `Internal` error.
     pub fn internal<E>(error: E) -> Error
     where
         E: Into<Box<dyn error::Error + Send + Sync>>,
@@ -196,6 +222,7 @@ impl Error {
         }
     }
 
+    /// Creates an `InvalidArgument` error.
     pub fn invalid_argument<E>(error: E) -> Error
     where
         E: Into<Box<dyn error::Error + Send + Sync>>,
@@ -206,6 +233,7 @@ impl Error {
         }
     }
 
+    /// Creates a `NotFound` error.
     pub fn not_found<E>(error: E) -> Error
     where
         E: Into<Box<dyn error::Error + Send + Sync>>,
@@ -216,6 +244,7 @@ impl Error {
         }
     }
 
+    /// Creates an `OutOfRange` error.
     pub fn out_of_range<E>(error: E) -> Error
     where
         E: Into<Box<dyn error::Error + Send + Sync>>,
@@ -226,6 +255,7 @@ impl Error {
         }
     }
 
+    /// Creates a `PermissionDenied` error.
     pub fn permission_denied<E>(error: E) -> Error
     where
         E: Into<Box<dyn error::Error + Send + Sync>>,
@@ -236,6 +266,7 @@ impl Error {
         }
     }
 
+    /// Creates a `ResourceExhausted` error.
     pub fn resource_exhausted<E>(error: E) -> Error
     where
         E: Into<Box<dyn error::Error + Send + Sync>>,
@@ -246,6 +277,7 @@ impl Error {
         }
     }
 
+    /// Creates an `Unauthenticated` error.
     pub fn unauthenticated<E>(error: E) -> Error
     where
         E: Into<Box<dyn error::Error + Send + Sync>>,
@@ -256,6 +288,7 @@ impl Error {
         }
     }
 
+    /// Creates an `Unavailable` error.
     pub fn unavailable<E>(error: E) -> Error
     where
         E: Into<Box<dyn error::Error + Send + Sync>>,
@@ -266,6 +299,7 @@ impl Error {
         }
     }
 
+    /// Creates an `Unimplemented` error.
     pub fn unimplemented<E>(error: E) -> Error
     where
         E: Into<Box<dyn error::Error + Send + Sync>>,
@@ -276,6 +310,7 @@ impl Error {
         }
     }
 
+    /// Creates an `Unknown` error.
     pub fn unknown<E>(error: E) -> Error
     where
         E: Into<Box<dyn error::Error + Send + Sync>>,

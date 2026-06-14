@@ -28,10 +28,13 @@ pub struct SpotifyId {
     pub id: u128,
 }
 
+/// Errors that can occur when parsing or converting Spotify IDs.
 #[derive(Debug, Error, Clone, Copy, PartialEq, Eq)]
 pub enum SpotifyIdError {
+    /// The ID cannot be parsed from the given input.
     #[error("ID cannot be parsed")]
     InvalidId,
+    /// The input is not a valid Spotify ID format.
     #[error("not a valid Spotify ID")]
     InvalidFormat,
 }
@@ -42,6 +45,7 @@ impl From<SpotifyIdError> for Error {
     }
 }
 
+/// A convenience type alias for `Result<SpotifyId, Error>`.
 pub type SpotifyIdResult = Result<SpotifyId, Error>;
 
 const BASE62_DIGITS: &[u8; 62] = b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";

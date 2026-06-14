@@ -6,35 +6,53 @@ use thiserror::Error;
 
 use crate::{Error, packet::PacketType, protocol};
 
+/// Mercury request method.
 #[derive(Debug, PartialEq, Eq)]
 pub enum MercuryMethod {
+    /// A GET request.
     Get,
+    /// A SUB (subscribe) request.
     Sub,
+    /// An UNSUB (unsubscribe) request.
     Unsub,
+    /// A SEND request.
     Send,
 }
 
+/// A Mercury request message.
 #[derive(Debug)]
 pub struct MercuryRequest {
+    /// The request method.
     pub method: MercuryMethod,
+    /// The target URI.
     pub uri: String,
+    /// Optional content type.
     pub content_type: Option<String>,
+    /// Request payload parts.
     pub payload: Vec<Vec<u8>>,
 }
 
+/// A Mercury response message.
 #[derive(Debug, Clone)]
 pub struct MercuryResponse {
+    /// The response URI.
     pub uri: String,
+    /// The HTTP-style status code.
     pub status_code: i32,
+    /// Response payload parts.
     pub payload: Vec<Vec<u8>>,
 }
 
+/// Errors that can occur during Mercury operations.
 #[derive(Debug, Error)]
 pub enum MercuryError {
+    /// The callback receiver was disconnected.
     #[error("callback receiver was disconnected")]
     Channel,
+    /// Error handling a specific packet type.
     #[error("error handling packet type: {0:?}")]
     Command(PacketType),
+    /// Error handling a Mercury response.
     #[error("error handling Mercury response: {0:?}")]
     Response(MercuryResponse),
 }
@@ -62,6 +80,7 @@ impl std::fmt::Display for MercuryMethod {
 }
 
 impl MercuryMethod {
+    /// Returns the corresponding packet type for this method.
     pub fn command(&self) -> PacketType {
         use PacketType::*;
         match *self {
@@ -73,6 +92,7 @@ impl MercuryMethod {
 }
 
 impl MercuryRequest {
+    /// Encodes this request into a binary packet with the given sequence number.
     pub fn encode(&self, seq: &[u8]) -> Result<Vec<u8>, Error> {
         let mut packet = Vec::new();
         packet.write_u16::<BigEndian>(seq.len() as u16)?;

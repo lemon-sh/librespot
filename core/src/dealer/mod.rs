@@ -4,8 +4,10 @@
 //! and dispatches incoming messages to registered handlers. It is used primarily
 //! by `Spirc` for Spotify Connect state updates.
 
+/// Dealer manager for handling subscriptions and request handlers.
 pub mod manager;
 mod maps;
+/// Dealer protocol types for WebSocket messages.
 pub mod protocol;
 
 use std::{
@@ -159,6 +161,7 @@ type MessageHandler = mpsc::UnboundedSender<Message>;
 
 // TODO: Maybe it's possible to unregister subscription directly when they
 //       are dropped instead of on next failed attempt.
+/// A stream of dealer messages for a subscribed URI.
 pub struct Subscription(UnboundedReceiver<Message>);
 
 impl Stream for Subscription {

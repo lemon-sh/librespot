@@ -12,8 +12,10 @@ use serde::Deserialize;
 
 use crate::Error;
 
+/// A socket address consisting of a hostname and port number.
 pub type SocketAddress = (String, u16);
 
+/// Resolved access point addresses for access points, dealer, and spclient.
 #[derive(Default)]
 pub struct AccessPoints {
     accesspoint: VecDeque<SocketAddress>,
@@ -21,6 +23,7 @@ pub struct AccessPoints {
     spclient: VecDeque<SocketAddress>,
 }
 
+/// Raw JSON response from the access point resolution endpoint.
 #[derive(Deserialize, Default)]
 pub struct ApResolveData {
     accesspoint: Vec<String>,
@@ -54,8 +57,10 @@ component! {
 }
 
 impl ApResolver {
-    // return a port if a proxy URL and/or a proxy port was specified. This is useful even when
-    // there is no proxy, but firewalls only allow certain ports (e.g. 443 and not 4070).
+    /// Returns the configured port for access point connections, if any.
+    ///
+    /// If a proxy URL or an explicit AP port is set in the session config,
+    /// this returns the AP port (defaulting to 443 when a proxy is set).
     pub fn port_config(&self) -> Option<u16> {
         if self.session().config().proxy.is_some() || self.session().config().ap_port.is_some() {
             Some(self.session().config().ap_port.unwrap_or(443))
@@ -88,6 +93,7 @@ impl ApResolver {
         }
     }
 
+    /// Performs an HTTP request to resolve access point addresses.
     pub async fn try_apresolve(&self) -> Result<ApResolveData, Error> {
         let req = Request::builder()
             .method(Method::GET)
@@ -129,6 +135,8 @@ impl ApResolver {
         self.lock(|inner| inner.data.is_any_empty())
     }
 
+    /// Resolves a specific endpoint (e.g., `"accesspoint"`, `"dealer"`, `"spclient"`)
+    /// to a socket address, resolving all access points first if necessary.
     pub async fn resolve(&self, endpoint: &str) -> Result<SocketAddress, Error> {
         if self.is_any_empty() {
             self.apresolve().await;

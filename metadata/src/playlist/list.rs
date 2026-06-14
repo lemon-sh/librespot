@@ -18,55 +18,90 @@ use librespot_core::{Error, Session, SpotifyUri, date::Date, spotify_id::Spotify
 use librespot_protocol as protocol;
 use protocol::playlist4_external::GeoblockBlockingType as Geoblock;
 
+/// Geographic blocking types for a playlist.
 #[derive(Debug, Clone, Default)]
 pub struct Geoblocks(Vec<Geoblock>);
 
 impl_deref_wrapped!(Geoblocks, Vec<Geoblock>);
 
+/// A Spotify playlist with its contents and metadata.
 #[derive(Debug, Clone)]
 pub struct Playlist {
+    /// The Spotify URI of the playlist.
     pub id: SpotifyUri,
+    /// The playlist revision (opaque binary data).
     pub revision: Vec<u8>,
+    /// The number of items in the playlist.
     pub length: i32,
+    /// The playlist attributes (name, description, etc.).
     pub attributes: PlaylistAttributes,
+    /// The playlist items.
     pub contents: PlaylistItemList,
+    /// Optional diff from a previous revision.
     pub diff: Option<PlaylistDiff>,
+    /// Optional sync result diff.
     pub sync_result: Option<PlaylistDiff>,
+    /// Resulting revisions after operations.
     pub resulting_revisions: Playlists,
+    /// Whether the playlist has multiple heads.
     pub has_multiple_heads: bool,
+    /// Whether the playlist is up to date.
     pub is_up_to_date: bool,
+    /// Nonce values.
     pub nonces: Vec<i64>,
+    /// The playlist timestamp.
     pub timestamp: Date,
+    /// Whether abuse reporting is enabled.
     pub has_abuse_reporting: bool,
+    /// The user's capabilities for this playlist.
     pub capabilities: Capabilities,
+    /// Geographic blocking restrictions.
     pub geoblocks: Geoblocks,
 }
 
+/// A list of playlist [`SpotifyId`]s.
 #[derive(Debug, Clone, Default)]
 pub struct Playlists(pub Vec<SpotifyId>);
 
 impl_deref_wrapped!(Playlists, Vec<SpotifyId>);
 
+/// Raw selected list content from the Spotify API, decorated with owner info.
 #[derive(Debug, Clone)]
 pub struct SelectedListContent {
+    /// The playlist revision.
     pub revision: Vec<u8>,
+    /// The number of items.
     pub length: i32,
+    /// The playlist attributes.
     pub attributes: PlaylistAttributes,
+    /// The playlist items.
     pub contents: PlaylistItemList,
+    /// Optional diff from a previous revision.
     pub diff: Option<PlaylistDiff>,
+    /// Optional sync result diff.
     pub sync_result: Option<PlaylistDiff>,
+    /// Resulting revisions after operations.
     pub resulting_revisions: Playlists,
+    /// Whether the playlist has multiple heads.
     pub has_multiple_heads: bool,
+    /// Whether the playlist is up to date.
     pub is_up_to_date: bool,
+    /// Nonce values.
     pub nonces: Vec<i64>,
+    /// The playlist timestamp.
     pub timestamp: Date,
+    /// The owner's username.
     pub owner_username: String,
+    /// Whether abuse reporting is enabled.
     pub has_abuse_reporting: bool,
+    /// The user's capabilities for this playlist.
     pub capabilities: Capabilities,
+    /// Geographic blocking restrictions.
     pub geoblocks: Geoblocks,
 }
 
 impl Playlist {
+    /// Returns an iterator over all track URIs in the playlist.
     pub fn tracks(&self) -> impl ExactSizeIterator<Item = &SpotifyUri> {
         let tracks = self.contents.items.iter().map(|item| &item.id);
 
@@ -79,6 +114,7 @@ impl Playlist {
         tracks
     }
 
+    /// Returns the playlist name.
     pub fn name(&self) -> &str {
         &self.attributes.name
     }

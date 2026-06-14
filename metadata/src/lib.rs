@@ -29,24 +29,41 @@ use protobuf::Message;
 
 use librespot_core::{Error, Session, SpotifyUri};
 
+/// Album metadata.
 pub mod album;
+/// Artist metadata.
 pub mod artist;
+/// Audio file and item types.
 pub mod audio;
+/// Availability information for Spotify resources.
 pub mod availability;
+/// Content rating information.
 pub mod content_rating;
+/// Copyright information.
 pub mod copyright;
+/// Podcast episode metadata.
 pub mod episode;
+/// Metadata error types.
 pub mod error;
+/// External identifier types (e.g., ISRC, UPC).
 pub mod external_id;
+/// Image and cover art types.
 pub mod image;
+/// Lyrics metadata.
 pub mod lyrics;
+/// Playlist metadata types.
 pub mod playlist;
 mod request;
+/// Geographic and catalogue restriction types.
 pub mod restriction;
+/// Sale period types.
 pub mod sale_period;
+/// Podcast show metadata.
 pub mod show;
+/// Track metadata.
 pub mod track;
 mod util;
+/// Video file types.
 pub mod video;
 
 pub use error::MetadataError;

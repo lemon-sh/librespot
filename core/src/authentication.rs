@@ -18,10 +18,13 @@ use thiserror::Error;
 
 use crate::{Error, protocol::authentication::AuthenticationType};
 
+/// Errors that can occur during authentication.
 #[derive(Debug, Error)]
 pub enum AuthenticationError {
+    /// An unrecognized authentication type was encountered.
     #[error("unknown authentication type {0}")]
     AuthType(u32),
+    /// The decryption key is invalid.
     #[error("invalid key")]
     Key,
 }
@@ -35,12 +38,15 @@ impl From<AuthenticationError> for Error {
 /// The credentials are used to log into the Spotify API.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct Credentials {
+    /// The Spotify username.
     pub username: Option<String>,
 
+    /// The authentication type.
     #[serde(serialize_with = "serialize_protobuf_enum")]
     #[serde(deserialize_with = "deserialize_protobuf_enum")]
     pub auth_type: AuthenticationType,
 
+    /// The authentication data (password bytes, access token, or encrypted blob).
     #[serde(alias = "encoded_auth_blob")]
     #[serde(serialize_with = "serialize_base64")]
     #[serde(deserialize_with = "deserialize_base64")]

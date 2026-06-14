@@ -9,23 +9,32 @@ use crate::convert::Converter;
 use crate::decoder::AudioPacket;
 use thiserror::Error;
 
+/// Errors that can occur when interacting with an audio sink.
 #[derive(Debug, Error)]
 pub enum SinkError {
+    /// The sink is not connected to an audio device.
     #[error("Audio Sink Error Not Connected: {0}")]
     NotConnected(String),
+    /// The audio device refused the connection.
     #[error("Audio Sink Error Connection Refused: {0}")]
     ConnectionRefused(String),
+    /// An error occurred while writing audio data.
     #[error("Audio Sink Error On Write: {0}")]
     OnWrite(String),
+    /// Invalid parameters were provided to the sink.
     #[error("Audio Sink Error Invalid Parameters: {0}")]
     InvalidParams(String),
+    /// An error occurred while changing the sink's state.
     #[error("Audio Sink Error Changing State: {0}")]
     StateChange(String),
 }
 
+/// Result type for sink operations.
 pub type SinkResult<T> = Result<T, SinkError>;
 
+/// Trait for opening an audio sink with a device name and format.
 pub trait Open {
+    /// Opens the sink with the given device name and audio format.
     fn open(_: Option<String>, format: AudioFormat) -> Self;
 }
 
@@ -46,9 +55,15 @@ pub trait Sink {
     fn write(&mut self, packet: AudioPacket, converter: &mut Converter) -> SinkResult<()>;
 }
 
+/// Builder function type for creating audio sinks.
 pub type SinkBuilder = fn(Option<String>, AudioFormat) -> Box<dyn Sink>;
 
+/// Trait for sinks that accept raw byte data.
+///
+/// This allows backends to receive audio in their native byte format
+/// without conversion through the `Converter`.
 pub trait SinkAsBytes {
+    /// Writes raw audio bytes to the sink.
     fn write_bytes(&mut self, data: &[u8]) -> SinkResult<()>;
 }
 
@@ -134,6 +149,10 @@ use self::pipe::StdoutSink;
 mod subprocess;
 use self::subprocess::SubprocessSink;
 
+/// List of available audio backends.
+///
+/// Each entry is a tuple of (name, builder function). The first entry
+/// is the default backend. Available backends are feature-gated.
 pub const BACKENDS: &[(&str, SinkBuilder)] = &[
     #[cfg(feature = "rodio-backend")]
     (RodioSink::NAME, rodio::mk_rodio), // default goes first
@@ -155,6 +174,10 @@ pub const BACKENDS: &[(&str, SinkBuilder)] = &[
     (SubprocessSink::NAME, mk_sink::<SubprocessSink>),
 ];
 
+/// Finds an audio backend by name.
+///
+/// Returns the first backend if `name` is `None`, or the matching
+/// backend if `name` is provided. Returns `None` if no match is found.
 pub fn find(name: Option<String>) -> Option<SinkBuilder> {
     if let Some(name) = name {
         BACKENDS

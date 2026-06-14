@@ -35,6 +35,7 @@ component! {
 
 const ONE_SECOND: Duration = Duration::from_secs(1);
 
+/// Errors that can occur on a data channel.
 #[derive(Debug, Error, Hash, PartialEq, Eq, Copy, Clone)]
 pub struct ChannelError;
 
@@ -50,16 +51,22 @@ impl fmt::Display for ChannelError {
     }
 }
 
+/// A handle to a binary data stream over the Shannon connection.
 pub struct Channel {
     receiver: mpsc::UnboundedReceiver<(u8, Bytes)>,
     state: ChannelState,
 }
 
+/// A handle to the header portion of a split channel.
 pub struct ChannelHeaders(BiLock<Channel>);
+/// A handle to the data portion of a split channel.
 pub struct ChannelData(BiLock<Channel>);
 
+/// An event emitted by a channel stream.
 pub enum ChannelEvent {
+    /// A header frame with an ID and data.
     Header(u8, Vec<u8>),
+    /// A data frame.
     Data(Bytes),
 }
 
@@ -71,6 +78,7 @@ enum ChannelState {
 }
 
 impl ChannelManager {
+    /// Allocates a new channel and returns its ID and handle.
     pub fn allocate(&self) -> (u16, Channel) {
         let (tx, rx) = mpsc::unbounded_channel();
 
@@ -122,6 +130,7 @@ impl ChannelManager {
         })
     }
 
+    /// Returns the estimated download rate in bytes per second.
     pub fn get_download_rate_estimate(&self) -> usize {
         self.lock(|inner| inner.download_rate_estimate)
     }
@@ -152,6 +161,7 @@ impl Channel {
         }
     }
 
+    /// Splits the channel into separate header and data handles.
     pub fn split(self) -> (ChannelHeaders, ChannelData) {
         let (headers, data) = BiLock::new(self);
 

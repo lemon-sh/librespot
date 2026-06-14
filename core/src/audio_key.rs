@@ -14,19 +14,26 @@ use tokio::sync::oneshot;
 
 use crate::{Error, FileId, SpotifyId, packet::PacketType, util::SeqGenerator};
 
+/// A 128-bit AES key used to decrypt audio streams.
 #[derive(Debug, Hash, PartialEq, Eq, Copy, Clone)]
 pub struct AudioKey(pub [u8; 16]);
 
+/// Errors that can occur when requesting audio keys.
 #[derive(Debug, Error)]
 pub enum AudioKeyError {
+    /// The server returned an error for the AES key request.
     #[error("audio key error")]
     AesKey,
+    /// The channel was closed before the response arrived.
     #[error("other end of channel disconnected")]
     Channel,
+    /// An unexpected packet type was received.
     #[error("unexpected packet type {0}")]
     Packet(u8),
+    /// No pending request exists for the given sequence number.
     #[error("sequence {0} not pending")]
     Sequence(u32),
+    /// The server did not respond within the timeout period.
     #[error("audio key response timeout")]
     Timeout,
 }
@@ -85,6 +92,7 @@ impl AudioKeyManager {
         Ok(())
     }
 
+    /// Requests the AES decryption key for a track file.
     pub async fn request(&self, track: SpotifyId, file: FileId) -> Result<AudioKey, Error> {
         let (tx, rx) = oneshot::channel();
 

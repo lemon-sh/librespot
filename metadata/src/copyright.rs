@@ -9,12 +9,16 @@ use librespot_protocol as protocol;
 use protocol::metadata::Copyright as CopyrightMessage;
 pub use protocol::metadata::copyright::Type as CopyrightType;
 
+/// A copyright notice for a Spotify resource.
 #[derive(Debug, Clone)]
 pub struct Copyright {
+    /// The type of copyright (e.g., performance, sound recording).
     pub copyright_type: CopyrightType,
+    /// The copyright text.
     pub text: String,
 }
 
+/// A list of [`Copyright`]s.
 #[derive(Debug, Clone, Default)]
 pub struct Copyrights(pub Vec<Copyright>);
 

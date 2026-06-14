@@ -4,6 +4,9 @@ use super::{MercuryFuture, MercuryManager, MercuryResponse};
 
 use crate::Error;
 
+/// A buffered Mercury message sender.
+///
+/// Queues messages and sends them sequentially over Mercury.
 pub struct MercurySender {
     mercury: MercuryManager,
     uri: String,
@@ -21,16 +24,19 @@ impl MercurySender {
         }
     }
 
+    /// Returns `true` if all pending messages have been sent.
     pub fn is_flushed(&self) -> bool {
         self.buffered_future.is_none() && self.pending.is_empty()
     }
 
+    /// Queues a message to be sent.
     pub fn send(&mut self, item: Vec<u8>) -> Result<(), Error> {
         let task = self.mercury.send(self.uri.clone(), item)?;
         self.pending.push_back(task);
         Ok(())
     }
 
+    /// Sends all queued messages and waits for their responses.
     pub async fn flush(&mut self) -> Result<(), Error> {
         if self.buffered_future.is_none() {
             self.buffered_future = self.pending.pop_front();

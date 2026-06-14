@@ -32,6 +32,10 @@ where
     Ok(pck.data)
 }
 
+/// Passthrough decoder for Ogg Vorbis streams.
+///
+/// Passes raw Ogg packets through without decoding, useful for custom
+/// audio processing pipelines. Only supports Ogg Vorbis format.
 pub struct PassthroughDecoder<R: Read + Seek> {
     rdr: PacketReader<R>,
     wtr: PacketWriter<'static, Vec<u8>>,

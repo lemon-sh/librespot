@@ -6,6 +6,10 @@ use portable_atomic::AtomicU64;
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 
+/// Software-based mixer that applies volume attenuation in software.
+///
+/// Uses atomic operations for lock-free volume changes during playback.
+/// Supports logarithmic, cubic, linear, and fixed volume curves.
 #[derive(Clone)]
 pub struct SoftMixer {
     // There is no AtomicF64, so we store the f64 as bits in a u64 field.
@@ -42,6 +46,7 @@ impl Mixer for SoftMixer {
 }
 
 impl SoftMixer {
+    /// Name of this mixer backend ("softvol").
     pub const NAME: &'static str = "softvol";
 }
 

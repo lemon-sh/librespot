@@ -25,35 +25,62 @@ use crate::{
 use librespot_core::{Error, Session, SpotifyUri, date::Date};
 use librespot_protocol as protocol;
 
+/// A Spotify track with its full metadata.
 #[derive(Debug, Clone)]
 pub struct Track {
+    /// The Spotify URI of the track.
     pub id: SpotifyUri,
+    /// The track name.
     pub name: String,
+    /// The album this track belongs to.
     pub album: Album,
+    /// The track's performing artists.
     pub artists: Artists,
+    /// The track number within its disc.
     pub number: i32,
+    /// The disc number within the album.
     pub disc_number: i32,
+    /// Duration in milliseconds.
     pub duration: i32,
+    /// Popularity score (0–100).
     pub popularity: i32,
+    /// Whether the track contains explicit content.
     pub is_explicit: bool,
+    /// External identifiers (e.g., ISRC).
     pub external_ids: ExternalIds,
+    /// Geographic restrictions.
     pub restrictions: Restrictions,
+    /// Available audio file formats.
     pub files: AudioFiles,
+    /// Alternative track URIs if this track is unavailable.
     pub alternatives: Tracks,
+    /// Sale periods for this track.
     pub sale_periods: SalePeriods,
+    /// Preview audio files.
     pub previews: AudioFiles,
+    /// Tags associated with the track.
     pub tags: Vec<String>,
+    /// The earliest timestamp at which this track becomes live.
     pub earliest_live_timestamp: Date,
+    /// Whether lyrics are available for this track.
     pub has_lyrics: bool,
+    /// Availability information.
     pub availability: Availabilities,
+    /// The licensor UUID.
     pub licensor: Uuid,
+    /// Language tags for the track's performance.
     pub language_of_performance: Vec<String>,
+    /// Content ratings by country.
     pub content_ratings: ContentRatings,
+    /// The original title before any version suffix.
     pub original_title: String,
+    /// The version title (e.g., "Deluxe Edition").
     pub version_title: String,
+    /// Artists with their roles (e.g., main, featured).
     pub artists_with_role: ArtistsWithRole,
 }
 
+/// A list of track URIs.
 #[derive(Debug, Clone, Default)]
 pub struct Tracks(pub Vec<SpotifyUri>);
 

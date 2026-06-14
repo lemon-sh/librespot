@@ -17,36 +17,54 @@ use protocol::playlist4_external::Item as PlaylistItemMessage;
 use protocol::playlist4_external::ListItems as PlaylistItemsMessage;
 use protocol::playlist4_external::MetaItem as PlaylistMetaItemMessage;
 
+/// An item in a playlist.
 #[derive(Debug, Clone)]
 pub struct PlaylistItem {
+    /// The Spotify URI of the item.
     pub id: SpotifyUri,
+    /// Attributes associated with this item.
     pub attributes: PlaylistItemAttributes,
 }
 
+/// A list of [`PlaylistItem`]s.
 #[derive(Debug, Clone, Default)]
 pub struct PlaylistItems(pub Vec<PlaylistItem>);
 
 impl_deref_wrapped!(PlaylistItems, Vec<PlaylistItem>);
 
+/// A paginated list of playlist items.
 #[derive(Debug, Clone)]
 pub struct PlaylistItemList {
+    /// The current position in the list.
     pub position: i32,
+    /// Whether the list is truncated.
     pub is_truncated: bool,
+    /// The items in this page.
     pub items: PlaylistItems,
+    /// Metadata items associated with the playlist.
     pub meta_items: PlaylistMetaItems,
 }
 
+/// Metadata for a playlist item.
 #[derive(Debug, Clone)]
 pub struct PlaylistMetaItem {
+    /// The revision identifier.
     pub revision: SpotifyUri,
+    /// The playlist attributes.
     pub attributes: PlaylistAttributes,
+    /// The number of items.
     pub length: i32,
+    /// The timestamp.
     pub timestamp: Date,
+    /// The owner's username.
     pub owner_username: String,
+    /// Whether abuse reporting is enabled.
     pub has_abuse_reporting: bool,
+    /// The user's capabilities for this playlist.
     pub capabilities: Capabilities,
 }
 
+/// A list of [`PlaylistMetaItem`]s.
 #[derive(Debug, Clone, Default)]
 pub struct PlaylistMetaItems(pub Vec<PlaylistMetaItem>);
 

@@ -8,12 +8,16 @@ use crate::util::{impl_deref_wrapped, impl_from_repeated};
 use librespot_protocol as protocol;
 use protocol::metadata::ExternalId as ExternalIdMessage;
 
+/// An external identifier for a Spotify resource (e.g., ISRC, EAN, UPC, or a URL).
 #[derive(Debug, Clone)]
 pub struct ExternalId {
+    /// The type of the external identifier (e.g., `"isrc"`, `"upc"`).
     pub external_type: String,
-    pub id: String, // this can be anything from a URL to a ISRC, EAN or UPC
+    /// The identifier value.
+    pub id: String,
 }
 
+/// A list of [`ExternalId`]s.
 #[derive(Debug, Clone, Default)]
 pub struct ExternalIds(pub Vec<ExternalId>);
 

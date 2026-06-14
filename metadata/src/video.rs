@@ -10,6 +10,7 @@ use librespot_core::FileId;
 use librespot_protocol as protocol;
 use protocol::metadata::VideoFile as VideoFileMessage;
 
+/// A collection of video file identifiers.
 #[derive(Debug, Clone, Default)]
 pub struct VideoFiles(pub Vec<FileId>);
 

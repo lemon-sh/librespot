@@ -14,24 +14,40 @@ use super::{AudioDecoder, AudioPacket, AudioPacketPosition, DecoderError, Decode
 
 use crate::{NUM_CHANNELS, PAGES_PER_MS, SAMPLE_RATE, player::NormalisationData, symphonia_util};
 
+/// Multi-format audio decoder using the Symphonia library.
+///
+/// Supports Ogg Vorbis, FLAC, MP3, and other formats via Symphonia.
+/// Handles sample buffering and format detection automatically.
 pub struct SymphoniaDecoder {
     probe_result: ProbeResult,
     decoder: Box<dyn Decoder>,
     sample_buffer: Option<SampleBuffer<f64>>,
 }
 
+/// Metadata extracted from a local audio file's tags.
 #[derive(Default)]
 pub(crate) struct LocalFileMetadata {
+    /// The track title.
     pub name: Option<String>,
+    /// The track's language.
     pub language: Option<String>,
+    /// The album name.
     pub album: Option<String>,
+    /// The artist(s).
     pub artists: Option<String>,
+    /// The album artist(s).
     pub album_artists: Option<String>,
+    /// The track number within the album.
     pub number: Option<u32>,
+    /// The disc number within the album.
     pub disc_number: Option<u32>,
 }
 
 impl SymphoniaDecoder {
+    /// Creates a new SymphoniaDecoder from a media source.
+    ///
+    /// The `hint` provides format detection clues (e.g. MIME type or file extension).
+    /// Returns an error if the format is unsupported or the sample rate is not 44.1 kHz.
     pub fn new<R>(input: R, hint: Hint) -> DecoderResult<Self>
     where
         R: MediaSource + 'static,
@@ -92,6 +108,9 @@ impl SymphoniaDecoder {
         })
     }
 
+    /// Extracts normalisation data from ReplayGain metadata tags.
+    ///
+    /// Returns `None` if no ReplayGain tags are present.
     pub fn normalisation_data(&mut self) -> Option<NormalisationData> {
         let metadata = symphonia_util::get_latest_metadata(&mut self.probe_result)?;
         let tags = metadata.current()?.tags();

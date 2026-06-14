@@ -18,6 +18,7 @@ const RAW_LEN: usize = 20;
 pub struct FileId(pub [u8; RAW_LEN]);
 
 impl FileId {
+    /// Creates a `FileId` from a raw byte slice.
     pub fn from_raw(src: &[u8]) -> FileId {
         let mut dst = [0u8; RAW_LEN];
         let len = src.len();
@@ -28,6 +29,7 @@ impl FileId {
         FileId(dst)
     }
 
+    /// Returns the `FileId` as a 40-character lowercase hex string.
     #[allow(clippy::wrong_self_convention)]
     pub fn to_base16(&self) -> String {
         let mut s = String::new();

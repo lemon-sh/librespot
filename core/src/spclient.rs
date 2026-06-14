@@ -55,8 +55,10 @@ component! {
     }
 }
 
+/// A convenience type alias for `Result<Bytes, Error>`.
 pub type SpClientResult = Result<Bytes, Error>;
 
+/// The `client-token` header name used in Spotify API requests.
 #[allow(clippy::declare_interior_mutable_const)]
 pub const CLIENT_TOKEN: HeaderName = HeaderName::from_static("client-token");
 #[allow(clippy::declare_interior_mutable_const)]
@@ -68,12 +70,16 @@ const NO_METRICS_AND_SALT: RequestOptions = RequestOptions {
     base_url: None,
 };
 
+/// Errors specific to the Spotify Web API client.
 #[derive(Debug, Error)]
 pub enum SpClientError {
+    /// A required attribute was missing from the user data.
     #[error("missing attribute {0}")]
     Attribute(String),
+    /// Expected data in the response but received none.
     #[error("expected data but received none")]
     NoData,
+    /// Expected an entry to exist in a response field.
     #[error("expected an entry to exist in {0}")]
     ExpectedEntry(&'static str),
 }
@@ -84,9 +90,12 @@ impl From<SpClientError> for Error {
     }
 }
 
+/// Retry strategy for failed requests.
 #[derive(Copy, Clone, Debug)]
 pub enum RequestStrategy {
+    /// Retry up to the specified number of times.
     TryTimes(usize),
+    /// Retry indefinitely.
     Infinitely,
 }
 
@@ -96,6 +105,7 @@ impl Default for RequestStrategy {
     }
 }
 
+/// Options for controlling request behavior.
 pub struct RequestOptions {
     metrics: bool,
     salt: bool,
@@ -112,20 +122,25 @@ impl Default for RequestOptions {
     }
 }
 
+/// A request to transfer playback between devices.
 #[derive(Debug, Serialize)]
 pub struct TransferRequest {
+    /// The transfer options.
     pub transfer_options: TransferOptions,
 }
 
 impl SpClient {
+    /// Sets the request retry strategy.
     pub fn set_strategy(&self, strategy: RequestStrategy) {
         self.lock(|inner| inner.strategy = strategy)
     }
 
+    /// Flushes the cached access point, forcing re-resolution on the next request.
     pub async fn flush_accesspoint(&self) {
         self.lock(|inner| inner.accesspoint = None)
     }
 
+    /// Returns the resolved spclient access point address.
     pub async fn get_accesspoint(&self) -> Result<SocketAddress, Error> {
         // Memoize the current access point.
         let ap = self.lock(|inner| inner.accesspoint.clone());
@@ -144,6 +159,7 @@ impl SpClient {
         Ok(tuple)
     }
 
+    /// Returns the base URL for the spclient endpoint.
     pub async fn base_url(&self) -> Result<String, Error> {
         let ap = self.get_accesspoint().await?;
         Ok(format!("https://{}:{}", ap.0, ap.1))
@@ -161,6 +177,7 @@ impl SpClient {
         self.session().http_client().request_body(request).await
     }
 
+    /// Returns the client token, requesting one if needed.
     pub async fn client_token(&self) -> Result<String, Error> {
         let client_token = self.lock(|inner| {
             if let Some(token) = &inner.client_token {
@@ -381,6 +398,7 @@ impl SpClient {
         Ok(access_token)
     }
 
+    /// Sends a protobuf-encoded request and returns the response bytes.
     pub async fn request_with_protobuf<M: Message + MessageFull>(
         &self,
         method: &Method,
@@ -398,6 +416,7 @@ impl SpClient {
         .await
     }
 
+    /// Sends a protobuf-encoded request with custom options.
     pub async fn request_with_protobuf_and_options<M: Message + MessageFull>(
         &self,
         method: &Method,
@@ -418,6 +437,7 @@ impl SpClient {
             .await
     }
 
+    /// Sends a request expecting a JSON response.
     pub async fn request_as_json(
         &self,
         method: &Method,
@@ -432,6 +452,7 @@ impl SpClient {
             .await
     }
 
+    /// Sends a raw HTTP request with default options.
     pub async fn request(
         &self,
         method: &Method,
@@ -443,6 +464,7 @@ impl SpClient {
             .await
     }
 
+    /// Sends a raw HTTP request with custom options and retry logic.
     pub async fn request_with_options(
         &self,
         method: &Method,
@@ -555,6 +577,7 @@ impl SpClient {
         last_response
     }
 
+    /// Updates the connect state for this device.
     pub async fn put_connect_state_request(&self, state: &PutStateRequest) -> SpClientResult {
         let endpoint = format!("/connect-state/v1/devices/{}", self.session().device_id());
 
@@ -565,11 +588,13 @@ impl SpClient {
             .await
     }
 
+    /// Deletes the connect state for this device.
     pub async fn delete_connect_state_request(&self) -> SpClientResult {
         let endpoint = format!("/connect-state/v1/devices/{}", self.session().device_id());
         self.request(&Method::DELETE, &endpoint, None, None).await
     }
 
+    /// Marks the device as inactive in the connect state.
     pub async fn put_connect_state_inactive(&self, notify: bool) -> SpClientResult {
         let endpoint = format!(
             "/connect-state/v1/devices/{}/inactive?notify={notify}",
@@ -583,6 +608,7 @@ impl SpClient {
             .await
     }
 
+    /// Fetches extended metadata for a batch of entities.
     pub async fn get_extended_metadata(
         &self,
         request: BatchedEntityRequest,
@@ -598,6 +624,7 @@ impl SpClient {
         Ok(BatchedExtensionResponse::parse_from_bytes(&res)?)
     }
 
+    /// Fetches metadata for a single entity by extension kind and URI.
     pub async fn get_metadata(&self, kind: ExtensionKind, id: &SpotifyUri) -> SpClientResult {
         let req = BatchedEntityRequest {
             entity_request: vec![EntityRequest {
@@ -628,28 +655,34 @@ impl SpClient {
         }
     }
 
+    /// Fetches track metadata.
     pub async fn get_track_metadata(&self, track_uri: &SpotifyUri) -> SpClientResult {
         self.get_metadata(ExtensionKind::TRACK_V4, track_uri).await
     }
 
+    /// Fetches episode metadata.
     pub async fn get_episode_metadata(&self, episode_uri: &SpotifyUri) -> SpClientResult {
         self.get_metadata(ExtensionKind::EPISODE_V4, episode_uri)
             .await
     }
 
+    /// Fetches album metadata.
     pub async fn get_album_metadata(&self, album_uri: &SpotifyUri) -> SpClientResult {
         self.get_metadata(ExtensionKind::ALBUM_V4, album_uri).await
     }
 
+    /// Fetches artist metadata.
     pub async fn get_artist_metadata(&self, artist_uri: &SpotifyUri) -> SpClientResult {
         self.get_metadata(ExtensionKind::ARTIST_V4, artist_uri)
             .await
     }
 
+    /// Fetches show/podcast metadata.
     pub async fn get_show_metadata(&self, show_uri: &SpotifyUri) -> SpClientResult {
         self.get_metadata(ExtensionKind::SHOW_V4, show_uri).await
     }
 
+    /// Fetches lyrics for a track.
     pub async fn get_lyrics(&self, track_id: &SpotifyId) -> SpClientResult {
         let endpoint = format!("/color-lyrics/v2/track/{}", track_id.to_base62());
 
@@ -657,6 +690,7 @@ impl SpClient {
             .await
     }
 
+    /// Fetches lyrics for a track image.
     pub async fn get_lyrics_for_image(
         &self,
         track_id: &SpotifyId,
@@ -672,12 +706,14 @@ impl SpClient {
             .await
     }
 
+    /// Fetches a playlist by its Spotify ID.
     pub async fn get_playlist(&self, playlist_id: &SpotifyId) -> SpClientResult {
         let endpoint = format!("/playlist/v2/playlist/{}", playlist_id.to_base62());
 
         self.request(&Method::GET, &endpoint, None, None).await
     }
 
+    /// Fetches a user's profile with optional playlist and artist limits.
     pub async fn get_user_profile(
         &self,
         username: &str,
@@ -705,6 +741,7 @@ impl SpClient {
             .await
     }
 
+    /// Fetches a user's followers.
     pub async fn get_user_followers(&self, username: &str) -> SpClientResult {
         let endpoint = format!("/user-profile-view/v3/profile/{username}/followers");
 
@@ -712,6 +749,7 @@ impl SpClient {
             .await
     }
 
+    /// Fetches who a user is following.
     pub async fn get_user_following(&self, username: &str) -> SpClientResult {
         let endpoint = format!("/user-profile-view/v3/profile/{username}/following");
 
@@ -719,6 +757,7 @@ impl SpClient {
             .await
     }
 
+    /// Fetches radio station recommendations for a track.
     pub async fn get_radio_for_track(&self, track_uri: &SpotifyUri) -> SpClientResult {
         let endpoint = format!(
             "/inspiredby-mix/v2/seed_to_playlist/{}?response-format=json",
@@ -738,6 +777,7 @@ impl SpClient {
     // - language=en
     // - count_tracks=0
     // - market=from_token
+    /// Fetches an Apollo radio station.
     pub async fn get_apollo_station(
         &self,
         scope: &str,
@@ -767,6 +807,7 @@ impl SpClient {
             .await
     }
 
+    /// Fetches the next page of results from a paginated URI.
     pub async fn get_next_page(&self, next_page_uri: &str) -> SpClientResult {
         let endpoint = next_page_uri.trim_start_matches("hm:/");
         self.request_as_json(&Method::GET, endpoint, None, None)
@@ -776,6 +817,7 @@ impl SpClient {
     // TODO: Seen-in-the-wild but unimplemented endpoints
     // - /presence-view/v1/buddylist
 
+    /// Fetches audio storage URLs for a file.
     pub async fn get_audio_storage(&self, file_id: &FileId) -> SpClientResult {
         let endpoint = format!(
             "/storage-resolve/files/audio/interactive/{}",
@@ -784,6 +826,7 @@ impl SpClient {
         self.request(&Method::GET, &endpoint, None, None).await
     }
 
+    /// Opens a streaming response from a CDN URL for a byte range.
     pub fn stream_from_cdn<U>(
         &self,
         cdn_url: U,
@@ -808,6 +851,7 @@ impl SpClient {
         Ok(stream)
     }
 
+    /// Fetches the response body from an arbitrary URL.
     pub async fn request_url(&self, url: &str) -> SpClientResult {
         let request = Request::builder()
             .method(&Method::GET)
@@ -818,6 +862,7 @@ impl SpClient {
     }
 
     // Audio preview in 96 kbps MP3, unencrypted
+    /// Fetches an audio preview (96 kbps MP3) for a file.
     pub async fn get_audio_preview(&self, preview_id: &FileId) -> SpClientResult {
         const ATTRIBUTE: &str = "audio-preview-url-template";
         let template = self
@@ -836,6 +881,7 @@ impl SpClient {
     }
 
     // The first 128 kB of a track, unencrypted
+    /// Fetches the first 128 kB of a track (unencrypted).
     pub async fn get_head_file(&self, file_id: &FileId) -> SpClientResult {
         const ATTRIBUTE: &str = "head-files-url";
         let template = self
@@ -848,6 +894,7 @@ impl SpClient {
         self.request_url(&url).await
     }
 
+    /// Fetches an image by its file ID.
     pub async fn get_image(&self, image_id: &FileId) -> SpClientResult {
         const ATTRIBUTE: &str = "image-url";
         let template = self
@@ -902,6 +949,7 @@ impl SpClient {
         Ok(ctx?)
     }
 
+    /// Fetches the autoplay context for a given context request.
     pub async fn get_autoplay_context(
         &self,
         context_request: &AutoplayContextRequest,
@@ -930,6 +978,7 @@ impl SpClient {
         Ok(ctx?)
     }
 
+    /// Fetches the user's root playlist list.
     pub async fn get_rootlist(&self, from: usize, length: Option<usize>) -> SpClientResult {
         let length = length.unwrap_or(120);
         let user = self.session().username();

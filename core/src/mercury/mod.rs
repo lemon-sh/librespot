@@ -35,12 +35,14 @@ component! {
     }
 }
 
+/// A pending Mercury request awaiting response.
 pub struct MercuryPending {
     parts: Vec<Vec<u8>>,
     partial: Option<Vec<u8>>,
     callback: Option<oneshot::Sender<Result<MercuryResponse, Error>>>,
 }
 
+/// A future that resolves to a Mercury response.
 pub struct MercuryFuture<T> {
     receiver: oneshot::Receiver<Result<T, Error>>,
 }
@@ -83,6 +85,7 @@ impl MercuryManager {
         Ok(MercuryFuture { receiver: rx })
     }
 
+    /// Sends a Mercury GET request and returns the response.
     pub fn get<T: Into<String>>(&self, uri: T) -> Result<MercuryFuture<MercuryResponse>, Error> {
         self.request(MercuryRequest {
             method: MercuryMethod::Get,
@@ -92,6 +95,7 @@ impl MercuryManager {
         })
     }
 
+    /// Sends a Mercury SEND request with the given data.
     pub fn send<T: Into<String>>(
         &self,
         uri: T,
@@ -105,10 +109,12 @@ impl MercuryManager {
         })
     }
 
+    /// Creates a Mercury sender for the given URI.
     pub fn sender<T: Into<String>>(&self, uri: T) -> MercurySender {
         MercurySender::new(self.clone(), uri.into())
     }
 
+    /// Subscribes to Mercury events on the given URI.
     pub fn subscribe<T: Into<String>>(
         &self,
         uri: T,
@@ -158,6 +164,7 @@ impl MercuryManager {
         }
     }
 
+    /// Listens for Mercury events on the given URI without an initial subscribe request.
     pub fn listen_for<T: Into<String>>(
         &self,
         uri: T,

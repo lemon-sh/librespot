@@ -27,8 +27,10 @@ component! {
     }
 }
 
+/// Errors that can occur when obtaining tokens.
 #[derive(Debug, Error)]
 pub enum TokenError {
+    /// No tokens are available in the cache or from the server.
     #[error("no tokens available")]
     Empty,
 }
@@ -39,12 +41,18 @@ impl From<TokenError> for Error {
     }
 }
 
+/// An OAuth access token with expiration and scope information.
 #[derive(Clone, Debug)]
 pub struct Token {
+    /// The access token string.
     pub access_token: String,
+    /// The token's lifetime.
     pub expires_in: Duration,
+    /// The token type (e.g., `"Bearer"`).
     pub token_type: String,
+    /// The scopes granted to this token.
     pub scopes: Vec<String>,
+    /// When the token was issued.
     pub timestamp: SystemTime,
 }
 
@@ -68,11 +76,14 @@ impl TokenProvider {
     // Depending on the client ID currently used, the function may return an error for specific scopes.
     // In this case get_token_with_client_id() can be used, where an appropriate client ID can be provided.
     // scopes must be comma-separated
+
+    /// Returns an access token for the given comma-separated scopes.
     pub async fn get_token(&self, scopes: &str) -> Result<Token, Error> {
         let client_id = self.session().client_id();
         self.get_token_with_client_id(scopes, &client_id).await
     }
 
+    /// Returns an access token for the given scopes and client ID.
     pub async fn get_token_with_client_id(
         &self,
         scopes: &str,
@@ -114,6 +125,7 @@ impl TokenProvider {
 impl Token {
     const EXPIRY_THRESHOLD: Duration = Duration::from_secs(10);
 
+    /// Parses a JSON response body into a `Token`.
     pub fn from_json(body: String) -> Result<Self, Error> {
         let data: TokenData = serde_json::from_slice(body.as_ref())?;
         Ok(Self {
@@ -125,10 +137,12 @@ impl Token {
         })
     }
 
+    /// Returns `true` if the token has expired or will expire very soon.
     pub fn is_expired(&self) -> bool {
         self.timestamp + self.expires_in.saturating_sub(Self::EXPIRY_THRESHOLD) < SystemTime::now()
     }
 
+    /// Returns `true` if this token includes the given scope.
     pub fn in_scope(&self, scope: &str) -> bool {
         for s in &self.scopes {
             if *s == scope {
@@ -138,6 +152,7 @@ impl Token {
         false
     }
 
+    /// Returns `true` if this token includes all the given scopes.
     pub fn in_scopes(&self, scopes: Vec<&str>) -> bool {
         for s in scopes {
             if !self.in_scope(s) {

@@ -1,3 +1,4 @@
+/// Dealer request protocol types.
 pub mod request;
 
 pub use request::*;
@@ -69,11 +70,15 @@ pub(super) struct WebsocketMessage {
     pub uri: String,
 }
 
+/// A raw payload value from a dealer WebSocket message.
 #[derive(Clone, Debug, Deserialize)]
 #[serde(untagged)]
 pub enum MessagePayloadValue {
+    /// A string payload (typically base64-encoded).
     String(String),
+    /// Raw bytes payload.
     Bytes(Vec<u8>),
+    /// A JSON payload.
     Json(JsonValue),
 }
 
@@ -84,28 +89,40 @@ pub(super) enum MessageOrRequest {
     Request(WebsocketRequest),
 }
 
+/// A decoded payload value.
 #[derive(Clone, Debug)]
 pub enum PayloadValue {
+    /// No payload.
     Empty,
+    /// Raw bytes.
     Raw(Vec<u8>),
+    /// A JSON string.
     Json(String),
 }
 
+/// A decoded dealer message with headers, payload, and URI.
 #[derive(Clone, Debug)]
 pub struct Message {
+    /// The message headers.
     pub headers: HashMap<String, String>,
+    /// The decoded payload.
     pub payload: PayloadValue,
+    /// The message URI.
     pub uri: String,
 }
 
+/// A wrapper that tries to deserialize as `T`, falling back to raw JSON.
 #[derive(Deserialize)]
 #[serde(untagged)]
 pub enum FallbackWrapper<T: protobuf::MessageFull> {
+    /// Successfully deserialized protobuf message.
     Inner(#[serde(deserialize_with = "json_proto")] T),
+    /// Fallback raw JSON value.
     Fallback(JsonValue),
 }
 
 impl Message {
+    /// Attempts to deserialize the message payload as a protobuf type with JSON fallback.
     pub fn try_from_json<M: protobuf::MessageFull>(
         value: Self,
     ) -> Result<FallbackWrapper<M>, Error> {
@@ -115,6 +132,7 @@ impl Message {
         }
     }
 
+    /// Deserializes the message payload from raw protobuf bytes.
     pub fn from_raw<M: protobuf::Message>(value: Self) -> Result<M, Error> {
         match value.payload {
             PayloadValue::Raw(bytes) => {

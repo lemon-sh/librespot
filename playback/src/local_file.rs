@@ -22,15 +22,23 @@ use symphonia::core::{
 // There are some indications online that FLAC is supported, so check for this as well.
 const SUPPORTED_FILE_EXTENSIONS: &[&str; 4] = &["mp3", "mp4", "m4p", "flac"];
 
+/// Lookup table mapping Spotify URIs to local file paths.
+///
+/// Built by scanning configured directories for supported audio files.
 #[derive(Default)]
 pub struct LocalFileLookup(HashMap<SpotifyUri, PathBuf>);
 
 impl LocalFileLookup {
+    /// Returns the file path for a local track URI, if found.
     pub fn get(&self, uri: &SpotifyUri) -> Option<&Path> {
         self.0.get(uri).map(PathBuf::as_path)
     }
 }
 
+/// Creates a lookup table by scanning directories for supported audio files.
+///
+/// Recursively scans each directory for files with supported extensions
+/// (mp3, mp4, m4p, flac) and builds a URI-to-path mapping.
 pub fn create_local_file_lookup(directories: &[PathBuf]) -> LocalFileLookup {
     let mut lookup = LocalFileLookup(HashMap::new());
 

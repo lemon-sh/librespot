@@ -59,6 +59,9 @@ impl From<SubprocessError> for SinkError {
     }
 }
 
+/// Audio sink that pipes output to a subprocess's stdin.
+///
+/// Allows playing audio through external commands (e.g. `aplay`, `ffplay`).
 pub struct SubprocessSink {
     shell_command: Option<String>,
     child: Option<Child>,
@@ -192,6 +195,7 @@ impl SinkAsBytes for SubprocessSink {
 }
 
 impl SubprocessSink {
+    /// Name of this audio backend ("subprocess").
     pub const NAME: &'static str = "subprocess";
 
     fn try_restart(&mut self, e: SubprocessError, restarted: &mut bool) -> SinkResult<()> {

@@ -26,11 +26,14 @@ use librespot_metadata as metadata;
 
 pub mod audio_backend;
 pub mod config;
+/// Audio sample format conversion between f64 and various PCM formats.
 pub mod convert;
 pub mod decoder;
+/// Dithering algorithms for reducing quantization error.
 pub mod dither;
 mod local_file;
 pub mod mixer;
+/// Player for loading, decoding, and playing audio tracks.
 pub mod player;
 mod symphonia_util;
 

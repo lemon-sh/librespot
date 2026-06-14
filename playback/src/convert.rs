@@ -1,11 +1,15 @@
 use crate::dither::{Ditherer, DithererBuilder};
 use zerocopy::{Immutable, IntoBytes};
 
+/// 24-bit signed integer stored in 3 bytes.
+///
+/// Used for S24_3 audio format where each sample occupies exactly 3 bytes.
 #[derive(Immutable, IntoBytes, Copy, Clone, Debug)]
 #[allow(non_camel_case_types)]
 #[repr(transparent)]
 pub struct i24([u8; 3]);
 impl i24 {
+    /// Creates an `i24` from a 32-bit signed integer, discarding the most significant byte.
     fn from_s24(sample: i32) -> Self {
         // trim the padding in the most significant byte
         #[allow(unused_variables)]
@@ -17,11 +21,16 @@ impl i24 {
     }
 }
 
+/// Audio sample format converter.
+///
+/// Converts between f64 audio samples and various PCM output formats
+/// (f32, i32, i24, i16). Optionally applies dithering during conversion.
 pub struct Converter {
     ditherer: Option<Box<dyn Ditherer>>,
 }
 
 impl Converter {
+    /// Creates a new converter with the given ditherer configuration.
     pub fn new(dither_config: Option<DithererBuilder>) -> Self {
         match dither_config {
             Some(ditherer_builder) => {
@@ -92,11 +101,13 @@ impl Converter {
         int_value.clamp(min, max)
     }
 
+    /// Converts f64 samples to f32.
     #[inline]
     pub fn f64_to_f32(&mut self, samples: &[f64]) -> Vec<f32> {
         samples.iter().map(|sample| *sample as f32).collect()
     }
 
+    /// Converts f64 samples to 32-bit signed integer PCM.
     #[inline]
     pub fn f64_to_s32(&mut self, samples: &[f64]) -> Vec<i32> {
         samples
@@ -105,7 +116,7 @@ impl Converter {
             .collect()
     }
 
-    /// S24 is 24-bit PCM packed in an upper 32-bit word
+    /// Converts f64 samples to 24-bit PCM packed in 32-bit words.
     #[inline]
     pub fn f64_to_s24(&mut self, samples: &[f64]) -> Vec<i32> {
         samples
@@ -114,7 +125,7 @@ impl Converter {
             .collect()
     }
 
-    /// S24_3 is 24-bit PCM in a 3-byte array
+    /// Converts f64 samples to 24-bit PCM in 3-byte arrays.
     #[inline]
     pub fn f64_to_s24_3(&mut self, samples: &[f64]) -> Vec<i24> {
         samples
@@ -123,6 +134,7 @@ impl Converter {
             .collect()
     }
 
+    /// Converts f64 samples to 16-bit signed integer PCM.
     #[inline]
     pub fn f64_to_s16(&mut self, samples: &[f64]) -> Vec<i16> {
         samples

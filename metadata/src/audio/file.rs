@@ -13,29 +13,48 @@ use protocol::metadata::AudioFile as AudioFileMessage;
 use librespot_protocol::metadata::audio_file::Format;
 use protobuf::Enum;
 
+/// Supported audio file formats with their bitrates.
 #[allow(non_camel_case_types)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum AudioFileFormat {
-    OGG_VORBIS_96,   // 0
-    OGG_VORBIS_160,  // 1
-    OGG_VORBIS_320,  // 2
-    MP3_256,         // 3
-    MP3_320,         // 4
-    MP3_160,         // 5
-    MP3_96,          // 6
-    MP3_160_ENC,     // 7
-    AAC_24,          // 8
-    AAC_48,          // 9
-    FLAC_FLAC,       // 16
-    XHE_AAC_24,      // 18
-    XHE_AAC_16,      // 19
-    XHE_AAC_12,      // 20
-    FLAC_FLAC_24BIT, // 22
-    // not defined in protobuf, but sometimes send
-    AAC_160, // 10
-    AAC_320, // 11
-    MP4_128, // 12
-    OTHER5,  // 13
+    /// OGG Vorbis at 96 kbps.
+    OGG_VORBIS_96,
+    /// OGG Vorbis at 160 kbps.
+    OGG_VORBIS_160,
+    /// OGG Vorbis at 320 kbps.
+    OGG_VORBIS_320,
+    /// MP3 at 256 kbps.
+    MP3_256,
+    /// MP3 at 320 kbps.
+    MP3_320,
+    /// MP3 at 160 kbps.
+    MP3_160,
+    /// MP3 at 96 kbps.
+    MP3_96,
+    /// MP3 at 160 kbps (encrypted).
+    MP3_160_ENC,
+    /// AAC at 24 kbps.
+    AAC_24,
+    /// AAC at 48 kbps.
+    AAC_48,
+    /// FLAC lossless.
+    FLAC_FLAC,
+    /// xHE-AAC at 24 kbps.
+    XHE_AAC_24,
+    /// xHE-AAC at 16 kbps.
+    XHE_AAC_16,
+    /// xHE-AAC at 12 kbps.
+    XHE_AAC_12,
+    /// FLAC lossless at 24-bit.
+    FLAC_FLAC_24BIT,
+    /// AAC at 160 kbps (not defined in protobuf).
+    AAC_160,
+    /// AAC at 320 kbps (not defined in protobuf).
+    AAC_320,
+    /// MP4 at 128 kbps (not defined in protobuf).
+    MP4_128,
+    /// Unknown format (not defined in protobuf).
+    OTHER5,
 }
 
 impl TryFrom<i32> for AudioFileFormat {
@@ -74,12 +93,14 @@ impl From<Format> for AudioFileFormat {
     }
 }
 
+/// A mapping from audio file formats to their file identifiers.
 #[derive(Debug, Clone, Default)]
 pub struct AudioFiles(pub HashMap<AudioFileFormat, FileId>);
 
 impl_deref_wrapped!(AudioFiles, HashMap<AudioFileFormat, FileId>);
 
 impl AudioFiles {
+    /// Returns `true` if the format is OGG Vorbis.
     pub fn is_ogg_vorbis(format: AudioFileFormat) -> bool {
         matches!(
             format,
@@ -89,6 +110,7 @@ impl AudioFiles {
         )
     }
 
+    /// Returns `true` if the format is MP3.
     pub fn is_mp3(format: AudioFileFormat) -> bool {
         matches!(
             format,
@@ -100,10 +122,12 @@ impl AudioFiles {
         )
     }
 
+    /// Returns `true` if the format is FLAC.
     pub fn is_flac(format: AudioFileFormat) -> bool {
         matches!(format, AudioFileFormat::FLAC_FLAC)
     }
 
+    /// Returns the MIME type string for the given format, if known.
     pub fn mime_type(format: AudioFileFormat) -> Option<&'static str> {
         if Self::is_ogg_vorbis(format) {
             Some("audio/ogg")

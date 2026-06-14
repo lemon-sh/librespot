@@ -16,6 +16,7 @@ fn parse_value_to_msg<T: MessageFull>(
     protobuf_json_mapping::parse_from_str_with_options::<T>(&value.to_string(), &IGNORE_UNKNOWN)
 }
 
+/// Deserializes a base64-encoded protobuf message into `Option<T>`.
 pub fn base64_proto<'de, T, D>(de: D) -> Result<Option<T>, D::Error>
 where
     T: MessageFull,
@@ -29,6 +30,7 @@ where
     T::parse_from_bytes(&bytes).map(Some).map_err(Error::custom)
 }
 
+/// Deserializes a JSON value into a protobuf message `T`.
 pub fn json_proto<'de, T, D>(de: D) -> Result<T, D::Error>
 where
     T: MessageFull,
@@ -38,6 +40,7 @@ where
     parse_value_to_msg(&v).map_err(Error::custom)
 }
 
+/// Deserializes a JSON value into `Option<T>` where `T` is a protobuf message.
 pub fn option_json_proto<'de, T, D>(de: D) -> Result<Option<T>, D::Error>
 where
     T: MessageFull,
@@ -47,6 +50,7 @@ where
     parse_value_to_msg(&v).map(Some).map_err(Error::custom)
 }
 
+/// Deserializes a JSON array into a `Vec<T>` of protobuf messages.
 pub fn vec_json_proto<'de, T, D>(de: D) -> Result<Vec<T>, D::Error>
 where
     T: MessageFull,
@@ -66,6 +70,7 @@ where
     Ok(res)
 }
 
+/// Deserializes a value and boxes it.
 pub fn boxed<'de, T, D>(de: D) -> Result<Box<T>, D::Error>
 where
     T: Deserialize<'de>,
@@ -75,6 +80,7 @@ where
     Ok(Box::new(v))
 }
 
+/// Deserializes a string `"true"` or `"false"` into a `bool`.
 pub fn bool_from_string<'de, D>(de: D) -> Result<bool, D::Error>
 where
     D: Deserializer<'de>,

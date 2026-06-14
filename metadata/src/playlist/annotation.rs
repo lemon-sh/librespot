@@ -12,12 +12,18 @@ use librespot_core::{Error, Session, SpotifyId, SpotifyUri};
 use librespot_protocol as protocol;
 pub use protocol::playlist_annotate3::AbuseReportState;
 
+/// Playlist annotation metadata including description, pictures, and abuse reporting.
 #[derive(Debug, Clone)]
 pub struct PlaylistAnnotation {
+    /// The playlist description.
     pub description: String,
+    /// The playlist picture identifier.
     pub picture: String,
+    /// Transcoded picture variants.
     pub transcoded_pictures: TranscodedPictures,
+    /// Whether abuse reporting is enabled for this playlist.
     pub has_abuse_reporting: bool,
+    /// The current abuse report state.
     pub abuse_report_state: AbuseReportState,
 }
 

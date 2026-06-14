@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 use rand::Rng;
 use rand_distr::Alphanumeric;
 use vergen_gitcl::{BuildBuilder, Emitter, GitclBuilder};

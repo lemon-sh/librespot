@@ -16,24 +16,42 @@ use librespot_protocol as protocol;
 pub use protocol::metadata::show::ConsumptionOrder as ShowConsumptionOrder;
 pub use protocol::metadata::show::MediaType as ShowMediaType;
 
+/// A Spotify podcast show with its metadata.
 #[derive(Debug, Clone)]
 pub struct Show {
+    /// The Spotify URI of the show.
     pub id: SpotifyUri,
+    /// The show name.
     pub name: String,
+    /// The show description.
     pub description: String,
+    /// The publisher name.
     pub publisher: String,
+    /// The language of the show (e.g., `"en"`).
     pub language: String,
+    /// Whether the show contains explicit content.
     pub is_explicit: bool,
+    /// Cover art images.
     pub covers: Images,
+    /// List of episode URIs in this show.
     pub episodes: Episodes,
+    /// Copyright notices.
     pub copyrights: Copyrights,
+    /// Geographic restrictions.
     pub restrictions: Restrictions,
+    /// Search keywords.
     pub keywords: Vec<String>,
+    /// The media type (audio, video, or mixed).
     pub media_type: ShowMediaType,
+    /// The order in which episodes are consumed.
     pub consumption_order: ShowConsumptionOrder,
+    /// Availability information.
     pub availability: Availabilities,
+    /// Optional URI of the show's trailer episode.
     pub trailer_uri: Option<SpotifyUri>,
+    /// Whether the show contains music and talk content.
     pub has_music_and_talk: bool,
+    /// Whether this show is an audiobook.
     pub is_audiobook: bool,
 }
 

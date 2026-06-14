@@ -32,22 +32,30 @@ use self::receive::audio_file_fetch;
 
 use crate::range_set::{Range, RangeSet};
 
+/// Result type for audio file operations.
 pub type AudioFileResult = Result<(), librespot_core::Error>;
 
 const DOWNLOAD_STATUS_POISON_MSG: &str = "audio download status mutex should not be poisoned";
 
+/// Errors that can occur during audio file fetching.
 #[derive(Error, Debug)]
 pub enum AudioFileError {
+    /// The other end of the channel was disconnected.
     #[error("other end of channel disconnected")]
     Channel,
+    /// A required HTTP response header was not found.
     #[error("required header not found")]
     Header,
+    /// The streamer received no data from the server.
     #[error("streamer received no data")]
     NoData,
+    /// No output file is available to write data to.
     #[error("no output available")]
     Output,
+    /// The server returned an unexpected HTTP status code.
     #[error("invalid status code {0}")]
     StatusCode(StatusCode),
+    /// The wait timeout for download progress was exceeded.
     #[error("wait timeout exceeded")]
     WaitTimeout,
 }
@@ -130,10 +138,15 @@ impl Default for AudioFetchParams {
 static AUDIO_FETCH_PARAMS: OnceLock<AudioFetchParams> = OnceLock::new();
 
 impl AudioFetchParams {
+    /// Sets the global audio fetch parameters.
+    ///
+    /// Returns `Err(params)` if they have already been set. Must be called before
+    /// any audio files are opened.
     pub fn set(params: AudioFetchParams) -> Result<(), AudioFetchParams> {
         AUDIO_FETCH_PARAMS.set(params)
     }
 
+    /// Returns the global audio fetch parameters, initializing with defaults if not yet set.
     pub fn get() -> &'static AudioFetchParams {
         AUDIO_FETCH_PARAMS.get_or_init(AudioFetchParams::default)
     }
@@ -149,6 +162,7 @@ pub enum AudioFile {
     Streaming(AudioFileStreaming),
 }
 
+/// An in-progress streaming HTTP range request for an audio file.
 #[derive(Debug)]
 pub struct StreamingRequest {
     streamer: IntoStream<ResponseFuture>,
@@ -157,10 +171,13 @@ pub struct StreamingRequest {
     length: usize,
 }
 
+/// Commands sent to the stream loader to control data fetching.
 #[derive(Debug)]
 pub enum StreamLoaderCommand {
-    Fetch(Range), // signal the stream loader to fetch a range of the file
-    Close,        // terminate and don't load any more data
+    /// Request the stream loader to fetch a specific byte range of the file.
+    Fetch(Range),
+    /// Terminate the stream loader; no more data will be loaded.
+    Close,
 }
 
 /// Controls the streaming audio loader.
@@ -176,14 +193,17 @@ pub struct StreamLoaderController {
 }
 
 impl StreamLoaderController {
+    /// Returns the total file size in bytes.
     pub fn len(&self) -> usize {
         self.file_size
     }
 
+    /// Returns `true` if the file has zero length.
     pub fn is_empty(&self) -> bool {
         self.file_size == 0
     }
 
+    /// Returns `true` if the entire given range has been downloaded and is ready to read.
     pub fn range_available(&self, range: Range) -> bool {
         if let Some(ref shared) = self.stream_shared {
             let download_status = shared
@@ -200,6 +220,7 @@ impl StreamLoaderController {
         }
     }
 
+    /// Returns `true` if all data from the current read position to the end of the file is available.
     pub fn range_to_end_available(&self) -> bool {
         match self.stream_shared {
             Some(ref shared) => {
@@ -210,6 +231,7 @@ impl StreamLoaderController {
         }
     }
 
+    /// Returns the estimated network round-trip time, or `None` for locally cached files.
     pub fn ping_time(&self) -> Option<Duration> {
         self.stream_shared.as_ref().map(|shared| shared.ping_time())
     }
@@ -222,11 +244,13 @@ impl StreamLoaderController {
         }
     }
 
+    /// Requests the stream loader to fetch the given byte range asynchronously.
     pub fn fetch(&self, range: Range) {
         // signal the stream loader to fetch a range of the file
         self.send_stream_loader_command(StreamLoaderCommand::Fetch(range));
     }
 
+    /// Requests the given byte range and blocks until the data is downloaded or a timeout occurs.
     pub fn fetch_blocking(&self, mut range: Range) -> AudioFileResult {
         // signal the stream loader to tech a range of the file and block until it is loaded.
 
@@ -277,6 +301,8 @@ impl StreamLoaderController {
         Ok(())
     }
 
+    /// Fetches `request_length` bytes from the current read position and blocks until
+    /// `wait_length` bytes are available.
     pub fn fetch_next_and_wait(
         &self,
         request_length: usize,
@@ -302,6 +328,7 @@ impl StreamLoaderController {
         }
     }
 
+    /// Switches the download strategy to optimize for random access (e.g., seeking).
     pub fn set_random_access_mode(&self) {
         // optimise download strategy for random access
         if let Some(ref shared) = self.stream_shared {
@@ -309,6 +336,7 @@ impl StreamLoaderController {
         }
     }
 
+    /// Switches the download strategy to optimize for sequential streaming playback.
     pub fn set_stream_mode(&self) {
         // optimise download strategy for streaming
         if let Some(ref shared) = self.stream_shared {
@@ -316,11 +344,15 @@ impl StreamLoaderController {
         }
     }
 
+    /// Terminates the stream loader, stopping all further data downloads for this file.
     pub fn close(&self) {
         // terminate stream loading and don't load any more data for this file.
         self.send_stream_loader_command(StreamLoaderCommand::Close);
     }
 
+    /// Creates a controller for a locally cached file with the given size.
+    ///
+    /// This controller has no streaming capabilities; it only reports the file size.
     pub fn from_local_file(file_size: u64) -> Self {
         Self {
             channel_tx: None,
@@ -330,6 +362,7 @@ impl StreamLoaderController {
     }
 }
 
+/// An audio file being streamed over HTTP with adaptive pre-fetching.
 pub struct AudioFileStreaming {
     read_file: fs::File,
     position: u64,
@@ -397,6 +430,9 @@ impl AudioFileShared {
 }
 
 impl AudioFile {
+    /// Opens an audio file, returning a cached version if available or starting a stream.
+    ///
+    /// Downloads from Spotify's CDN if not cached, and saves to cache on completion.
     pub async fn open(
         session: &Session,
         file_id: FileId,
@@ -432,6 +468,8 @@ impl AudioFile {
         Ok(AudioFile::Streaming(streaming.await?))
     }
 
+    /// Returns a controller for managing the streaming loader, or for cached files,
+    /// a controller that reports the file size without streaming capabilities.
     pub fn get_stream_loader_controller(&self) -> Result<StreamLoaderController, Error> {
         let controller = match self {
             AudioFile::Streaming(stream) => StreamLoaderController {
@@ -449,12 +487,17 @@ impl AudioFile {
         Ok(controller)
     }
 
+    /// Returns `true` if this audio file is locally cached.
     pub fn is_cached(&self) -> bool {
         matches!(self, AudioFile::Cached { .. })
     }
 }
 
 impl AudioFileStreaming {
+    /// Opens a streaming connection to an audio file on Spotify's CDN.
+    ///
+    /// Resolves the CDN URL, fetches the initial chunk to determine the file size,
+    /// and spawns a background task to handle data fetching.
     pub async fn open(
         session: Session,
         file_id: FileId,

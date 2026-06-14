@@ -74,24 +74,42 @@ impl Default for SessionConfig {
 /// Affects the icon shown in the Spotify client's device picker.
 #[derive(Clone, Copy, Debug, Hash, PartialOrd, Ord, PartialEq, Eq, Default)]
 pub enum DeviceType {
+    /// Unknown device type.
     Unknown = 0,
+    /// A desktop or laptop computer.
     Computer = 1,
+    /// A tablet device.
     Tablet = 2,
+    /// A smartphone.
     Smartphone = 3,
+    /// A speaker (default).
     #[default]
     Speaker = 4,
+    /// A smart TV.
     Tv = 5,
+    /// An audio/video receiver.
     Avr = 6,
+    /// A set-top box.
     Stb = 7,
+    /// An audio dongle.
     AudioDongle = 8,
+    /// A game console.
     GameConsole = 9,
+    /// A Chromecast Audio device.
     CastAudio = 10,
+    /// A Chromecast Video device.
     CastVideo = 11,
+    /// An automobile infotainment system.
     Automobile = 12,
+    /// A smartwatch.
     Smartwatch = 13,
+    /// A Chromebook.
     Chromebook = 14,
+    /// An unknown Spotify device type.
     UnknownSpotify = 100,
+    /// A Spotify Car Thing.
     CarThing = 101,
+    /// An observer device.
     Observer = 102,
 }
 

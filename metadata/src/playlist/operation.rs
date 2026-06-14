@@ -18,41 +18,63 @@ use protocol::playlist4_external::Op as PlaylistOperationMessage;
 use protocol::playlist4_external::Rem as PlaylistRemoveMessage;
 pub use protocol::playlist4_external::op::Kind as PlaylistOperationKind;
 
+/// A single playlist operation (add, remove, move, or attribute update).
 #[derive(Debug, Clone)]
 pub struct PlaylistOperation {
+    /// The type of operation.
     pub kind: PlaylistOperationKind,
+    /// Add operation details.
     pub add: PlaylistOperationAdd,
+    /// Remove operation details.
     pub rem: PlaylistOperationRemove,
+    /// Move operation details.
     pub mov: PlaylistOperationMove,
+    /// Item attribute update details.
     pub update_item_attributes: PlaylistUpdateItemAttributes,
+    /// List attribute update details.
     pub update_list_attributes: PlaylistUpdateAttributes,
 }
 
+/// A list of [`PlaylistOperation`]s.
 #[derive(Debug, Clone, Default)]
 pub struct PlaylistOperations(pub Vec<PlaylistOperation>);
 
 impl_deref_wrapped!(PlaylistOperations, Vec<PlaylistOperation>);
 
+/// An add operation for adding items to a playlist.
 #[derive(Debug, Clone)]
 pub struct PlaylistOperationAdd {
+    /// The index at which to add items.
     pub from_index: i32,
+    /// The items to add.
     pub items: PlaylistItems,
+    /// Whether to add items at the end.
     pub add_last: bool,
+    /// Whether to add items at the beginning.
     pub add_first: bool,
 }
 
+/// A move operation for rearranging items in a playlist.
 #[derive(Debug, Clone)]
 pub struct PlaylistOperationMove {
+    /// The source index.
     pub from_index: i32,
+    /// The number of items to move.
     pub length: i32,
+    /// The destination index.
     pub to_index: i32,
 }
 
+/// A remove operation for removing items from a playlist.
 #[derive(Debug, Clone)]
 pub struct PlaylistOperationRemove {
+    /// The starting index of items to remove.
     pub from_index: i32,
+    /// The number of items to remove.
     pub length: i32,
+    /// The items being removed.
     pub items: PlaylistItems,
+    /// Whether items are identified by key.
     pub has_items_as_key: bool,
 }
 

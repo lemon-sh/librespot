@@ -12,20 +12,28 @@ use librespot_protocol as protocol;
 pub use protocol::metadata::restriction::Catalogue as RestrictionCatalogue;
 pub use protocol::metadata::restriction::Type as RestrictionType;
 
+/// A geographic or catalogue restriction on a Spotify resource.
 #[derive(Debug, Clone)]
 pub struct Restriction {
+    /// The catalogues this restriction applies to.
     pub catalogues: RestrictionCatalogues,
+    /// The type of restriction (e.g., whitelist, blacklist).
     pub restriction_type: RestrictionType,
+    /// Catalogue string identifiers.
     pub catalogue_strs: Vec<String>,
+    /// Country codes where the resource is allowed, if a whitelist is present.
     pub countries_allowed: Option<Vec<String>>,
+    /// Country codes where the resource is forbidden, if a blacklist is present.
     pub countries_forbidden: Option<Vec<String>>,
 }
 
+/// A list of [`Restriction`]s.
 #[derive(Debug, Clone, Default)]
 pub struct Restrictions(pub Vec<Restriction>);
 
 impl_deref_wrapped!(Restrictions, Vec<Restriction>);
 
+/// A list of [`RestrictionCatalogue`] values.
 #[derive(Debug, Clone)]
 pub struct RestrictionCatalogues(pub Vec<RestrictionCatalogue>);
 

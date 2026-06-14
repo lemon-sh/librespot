@@ -25,34 +25,60 @@ use librespot_core::{Error, Session, SpotifyUri, date::Date};
 use librespot_protocol as protocol;
 pub use protocol::metadata::episode::EpisodeType;
 
+/// A Spotify podcast episode with its full metadata.
 #[derive(Debug, Clone)]
 pub struct Episode {
+    /// The Spotify URI of the episode.
     pub id: SpotifyUri,
+    /// The episode name.
     pub name: String,
+    /// Duration in milliseconds.
     pub duration: i32,
+    /// Available audio files for this episode.
     pub audio: AudioFiles,
+    /// The episode description.
     pub description: String,
+    /// The episode number within its show.
     pub number: i32,
+    /// The publication date.
     pub publish_time: Date,
+    /// Cover art images.
     pub covers: Images,
+    /// The language of the episode (e.g., `"en"`).
     pub language: String,
+    /// Whether the episode contains explicit content.
     pub is_explicit: bool,
+    /// The name of the show this episode belongs to.
     pub show_name: String,
+    /// Available video files.
     pub videos: VideoFiles,
+    /// Video preview clips.
     pub video_previews: VideoFiles,
+    /// Audio preview clips.
     pub audio_previews: AudioFiles,
+    /// Geographic restrictions.
     pub restrictions: Restrictions,
+    /// Freeze-frame images for the episode.
     pub freeze_frames: Images,
+    /// Search keywords.
     pub keywords: Vec<String>,
+    /// Whether background playback is allowed.
     pub allow_background_playback: bool,
+    /// Availability information.
     pub availability: Availabilities,
+    /// External URL for the episode.
     pub external_url: String,
+    /// The type of episode (full, trailer, etc.).
     pub episode_type: EpisodeType,
+    /// Whether the episode contains music and talk content.
     pub has_music_and_talk: bool,
+    /// Content ratings by country.
     pub content_rating: ContentRatings,
+    /// Whether this episode is an audiobook chapter.
     pub is_audiobook_chapter: bool,
 }
 
+/// A list of episode URIs.
 #[derive(Debug, Clone, Default)]
 pub struct Episodes(pub Vec<SpotifyUri>);
 

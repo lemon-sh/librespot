@@ -19,7 +19,9 @@ component! {
     }
 }
 
+/// A boxed, pinned, type-erased async stream.
 pub type BoxedStream<T> = Pin<Box<dyn Stream<Item = T> + Send>>;
+/// A boxed stream of `Result<T, Error>`.
 pub type BoxedStreamResult<T> = BoxedStream<Result<T, Error>>;
 
 #[derive(Error, Debug)]
@@ -38,13 +40,18 @@ impl From<DealerError> for Error {
     }
 }
 
+/// The reply to a dealer request.
 #[derive(Debug)]
 pub enum Reply {
+    /// The request was handled successfully.
     Success,
+    /// The request handling failed.
     Failure,
+    /// The request was not answered.
     Unanswered,
 }
 
+/// A dealer request paired with a reply channel.
 pub type RequestReply = (Request, mpsc::UnboundedSender<Reply>);
 type RequestReceiver = mpsc::UnboundedReceiver<RequestReply>;
 type RequestSender = mpsc::UnboundedSender<RequestReply>;
@@ -90,6 +97,7 @@ impl DealerManager {
         Ok(url)
     }
 
+    /// Subscribes to dealer messages for the given URI, returning a subscription stream.
     pub fn add_listen_for(&self, url: impl Into<String>) -> Result<Subscription, Error> {
         let url = url.into();
         self.lock(|inner| {
@@ -103,6 +111,7 @@ impl DealerManager {
         })
     }
 
+    /// Subscribes to dealer messages and transforms them with the given function.
     pub fn listen_for<T>(
         &self,
         uri: impl Into<String>,
@@ -111,6 +120,7 @@ impl DealerManager {
         Ok(Box::pin(self.add_listen_for(uri)?.map(t)))
     }
 
+    /// Registers a request handler for the given URI.
     pub fn add_handle_for(&self, url: impl Into<String>) -> Result<RequestReceiver, Error> {
         let url = url.into();
 
@@ -126,12 +136,14 @@ impl DealerManager {
         })
     }
 
+    /// Registers a request handler for the given URI, returning a boxed stream of request-replies.
     pub fn handle_for(&self, uri: impl Into<String>) -> Result<BoxedStream<RequestReply>, Error> {
         Ok(Box::pin(
             self.add_handle_for(uri).map(UnboundedReceiverStream::new)?,
         ))
     }
 
+    /// Returns `true` if any handler or subscription is registered for the given URI.
     pub fn handles(&self, uri: &str) -> bool {
         self.lock(|inner| {
             if let Some(dealer) = inner.dealer.get() {
@@ -144,6 +156,7 @@ impl DealerManager {
         })
     }
 
+    /// Starts the dealer WebSocket connection.
     pub async fn start(&self) -> Result<(), Error> {
         debug!("Launching dealer");
 
@@ -166,6 +179,7 @@ impl DealerManager {
         Ok(())
     }
 
+    /// Closes the dealer WebSocket connection.
     pub async fn close(&self) {
         if let Some(dealer) = self.lock(|inner| inner.dealer.take()) {
             dealer.close().await

@@ -9,9 +9,11 @@ use crate::config::VolumeCtrl;
 use librespot_core::Error;
 use std::sync::Arc;
 
+/// Volume mapping curves (logarithmic, cubic) for perceptual volume control.
 pub mod mappings;
 use self::mappings::MappedCtrl;
 
+/// A no-op volume getter that always returns 1.0 (full volume).
 pub struct NoOpVolume;
 
 /// Trait for volume control backends.
@@ -45,6 +47,7 @@ impl VolumeGetter for NoOpVolume {
     }
 }
 
+/// Software-based mixer with atomic volume control.
 pub mod softmixer;
 use self::softmixer::SoftMixer;
 
@@ -53,11 +56,16 @@ pub mod alsamixer;
 #[cfg(feature = "alsa-backend")]
 use self::alsamixer::AlsaMixer;
 
+/// Configuration for a mixer backend.
 #[derive(Debug, Clone)]
 pub struct MixerConfig {
+    /// The audio device name (e.g. "default" for PulseAudio).
     pub device: String,
+    /// The mixer control name (e.g. "PCM" for ALSA).
     pub control: String,
+    /// The mixer device index (for multi-device setups).
     pub index: u32,
+    /// The volume control curve type.
     pub volume_ctrl: VolumeCtrl,
 }
 
@@ -72,18 +80,27 @@ impl Default for MixerConfig {
     }
 }
 
+/// Builder function type for creating mixer instances.
 pub type MixerFn = fn(MixerConfig) -> Result<Arc<dyn Mixer>, Error>;
 
 fn mk_sink<M: Mixer + 'static>(config: MixerConfig) -> Result<Arc<dyn Mixer>, Error> {
     Ok(Arc::new(M::open(config)?))
 }
 
+/// List of available mixer backends.
+///
+/// Each entry is a tuple of (name, builder function). The first entry
+/// is the default mixer.
 pub const MIXERS: &[(&str, MixerFn)] = &[
     (SoftMixer::NAME, mk_sink::<SoftMixer>), // default goes first
     #[cfg(feature = "alsa-backend")]
     (AlsaMixer::NAME, mk_sink::<AlsaMixer>),
 ];
 
+/// Finds a mixer backend by name.
+///
+/// Returns the first mixer if `name` is `None`, or the matching
+/// mixer if `name` is provided. Returns `None` if no match is found.
 pub fn find(name: Option<&str>) -> Option<MixerFn> {
     if let Some(name) = name {
         MIXERS

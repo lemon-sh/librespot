@@ -5,34 +5,38 @@ use std::fmt;
 
 use crate::NUM_CHANNELS;
 
-// Dithering lowers digital-to-analog conversion ("requantization") error,
-// linearizing output, lowering distortion and replacing it with a constant,
-// fixed noise level, which is more pleasant to the ear than the distortion.
-//
-// Guidance:
-//
-//  * On S24, S24_3 and S24, the default is to use triangular dithering.
-//    Depending on personal preference you may use Gaussian dithering instead;
-//    it's not as good objectively, but it may be preferred subjectively if
-//    you are looking for a more "analog" sound akin to tape hiss.
-//
-//  * Advanced users who know that they have a DAC without noise shaping have
-//    a third option: high-passed dithering, which is like triangular dithering
-//    except that it moves dithering noise up in frequency where it is less
-//    audible. Note: 99% of DACs are of delta-sigma design with noise shaping,
-//    so unless you have a multibit / R2R DAC, or otherwise know what you are
-//    doing, this is not for you.
-//
-//  * Don't dither or shape noise on S32 or F32. On F32 it's not supported
-//    anyway (there are no integer conversions and so no rounding errors) and
-//    on S32 the noise level is so far down that it is simply inaudible even
-//    after volume normalisation and control.
-//
+/// Trait for dithering algorithms.
+///
+/// Dithering lowers digital-to-analog conversion ("requantization") error,
+/// linearizing output, lowering distortion and replacing it with a constant,
+/// fixed noise level, which is more pleasant to the ear than the distortion.
+///
+/// Guidance:
+///
+///  * On S24, S24_3 and S16, the default is to use triangular dithering.
+///    Depending on personal preference you may use Gaussian dithering instead;
+///    it's not as good objectively, but it may be preferred subjectively if
+///    you are looking for a more "analog" sound akin to tape hiss.
+///
+///  * Advanced users who know that they have a DAC without noise shaping have
+///    a third option: high-passed dithering, which is like triangular dithering
+///    except that it moves dithering noise up in frequency where it is less
+///    audible. Note: 99% of DACs are of delta-sigma design with noise shaping,
+///    so unless you have a multibit / R2R DAC, or otherwise know what you are
+///    doing, this is not for you.
+///
+///  * Don't dither or shape noise on S32 or F32. On F32 it's not supported
+///    anyway (there are no integer conversions and so no rounding errors) and
+///    on S32 the noise level is so far down that it is simply inaudible even
+///    after volume normalisation and control.
 pub trait Ditherer {
+    /// Creates a new instance of this ditherer.
     fn new() -> Self
     where
         Self: Sized;
+    /// Returns the name of this dithering algorithm.
     fn name(&self) -> &'static str;
+    /// Returns a dithering noise sample.
     fn noise(&mut self) -> f64;
 }
 
@@ -46,6 +50,10 @@ fn create_rng() -> SmallRng {
     SmallRng::from_os_rng()
 }
 
+/// Triangular Probability Density Function (TPDF) ditherer.
+///
+/// Uses a triangular distribution with ±1 LSB peak-to-peak amplitude.
+/// This is the recommended default for most use cases.
 pub struct TriangularDitherer {
     cached_rng: SmallRng,
     distribution: Triangular<f64>,
@@ -71,9 +79,14 @@ impl Ditherer for TriangularDitherer {
 }
 
 impl TriangularDitherer {
+    /// Name of this dithering algorithm ("tpdf").
     pub const NAME: &'static str = "tpdf";
 }
 
+/// Gaussian Probability Density Function (GPDF) ditherer.
+///
+/// Uses a Gaussian distribution with σ = 0.6 LSB. Provides a more "analog"
+/// sound than triangular dithering but is objectively less optimal.
 pub struct GaussianDitherer {
     cached_rng: SmallRng,
     distribution: Normal<f64>,
@@ -106,9 +119,15 @@ impl Ditherer for GaussianDitherer {
 }
 
 impl GaussianDitherer {
+    /// Name of this dithering algorithm ("gpdf").
     pub const NAME: &'static str = "gpdf";
 }
 
+/// High-passed TPDF ditherer.
+///
+/// Like triangular dithering but shifts noise to higher frequencies where it
+/// is less audible. Only use with DACs that do not have noise shaping
+/// (i.e. multibit / R2R DACs).
 pub struct HighPassDitherer {
     active_channel: usize,
     previous_noises: [f64; NUM_CHANNELS as usize],
@@ -143,15 +162,22 @@ impl Ditherer for HighPassDitherer {
 }
 
 impl HighPassDitherer {
+    /// Name of this dithering algorithm ("tpdf_hp").
     pub const NAME: &'static str = "tpdf_hp";
 }
 
+/// Creates a new boxed ditherer instance.
 pub fn mk_ditherer<D: Ditherer + 'static>() -> Box<dyn Ditherer> {
     Box::new(D::new())
 }
 
+/// Builder function type for creating ditherer instances.
 pub type DithererBuilder = fn() -> Box<dyn Ditherer>;
 
+/// Finds a ditherer builder by name.
+///
+/// Supported names: "tpdf" (triangular), "gpdf" (Gaussian), "tpdf_hp" (high-passed).
+/// Returns `None` if the name is not recognized.
 pub fn find_ditherer(name: Option<String>) -> Option<DithererBuilder> {
     match name.as_deref() {
         Some(TriangularDitherer::NAME) => Some(mk_ditherer::<TriangularDitherer>),

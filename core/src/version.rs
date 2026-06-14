@@ -38,6 +38,7 @@ pub const SPOTIFY_SPIRC_VERSION: &str = "3.2.6";
 /// The user agent to fall back to, if one could not be determined dynamically.
 pub const FALLBACK_USER_AGENT: &str = "Spotify/124200290 Linux/0 (librespot)";
 
+/// Returns the Spotify version string for the current platform.
 pub fn spotify_version() -> String {
     match crate::config::OS {
         "android" | "ios" => SPOTIFY_MOBILE_VERSION.to_owned(),
@@ -45,6 +46,7 @@ pub fn spotify_version() -> String {
     }
 }
 
+/// Returns the Spotify semantic version string for the current platform.
 pub fn spotify_semantic_version() -> String {
     match crate::config::OS {
         "android" | "ios" => SPOTIFY_MOBILE_VERSION.to_owned(),

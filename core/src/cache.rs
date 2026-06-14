@@ -27,8 +27,10 @@ use crate::{Error, FileId, authentication::Credentials, error::ErrorKind};
 
 const CACHE_LIMITER_POISON_MSG: &str = "cache limiter mutex should not be poisoned";
 
+/// Errors that can occur during cache operations.
 #[derive(Debug, Error)]
 pub enum CacheError {
+    /// The audio cache location is not configured.
     #[error("audio cache location is not configured")]
     Path,
 }
@@ -282,6 +284,7 @@ pub struct Cache {
 }
 
 impl Cache {
+    /// Creates a new cache with the given directory paths and optional size limit.
     pub fn new<P: AsRef<Path>>(
         credentials_path: Option<P>,
         volume_path: Option<P>,
@@ -325,6 +328,7 @@ impl Cache {
         Ok(cache)
     }
 
+    /// Reads cached credentials from disk.
     pub fn credentials(&self) -> Option<Credentials> {
         let location = self.credentials_location.as_ref()?;
 
@@ -353,6 +357,7 @@ impl Cache {
         }
     }
 
+    /// Saves credentials to the cache directory.
     pub fn save_credentials(&self, cred: &Credentials) {
         if let Some(location) = &self.credentials_location {
             let mut file = File::options();
@@ -371,6 +376,7 @@ impl Cache {
         }
     }
 
+    /// Reads the cached volume level.
     pub fn volume(&self) -> Option<u16> {
         let location = self.volume_location.as_ref()?;
 
@@ -392,6 +398,7 @@ impl Cache {
         }
     }
 
+    /// Saves the volume level to the cache directory.
     pub fn save_volume(&self, volume: u16) {
         if let Some(ref location) = self.volume_location {
             let result = File::create(location).and_then(|mut file| write!(file, "{volume}"));
@@ -401,6 +408,7 @@ impl Cache {
         }
     }
 
+    /// Returns the file path for a cached audio file.
     pub fn file_path(&self, file: FileId) -> Option<PathBuf> {
         self.audio_location.as_ref().map(|location| {
             let name = file.to_base16();
@@ -410,6 +418,7 @@ impl Cache {
         })
     }
 
+    /// Opens a cached audio file for reading.
     pub fn file(&self, file: FileId) -> Option<File> {
         let path = self.file_path(file)?;
         match File::open(&path) {
@@ -430,6 +439,7 @@ impl Cache {
         }
     }
 
+    /// Saves an audio file to the cache directory.
     pub fn save_file<F: Read>(&self, file: FileId, contents: &mut F) -> Result<PathBuf, Error> {
         if let Some(path) = self.file_path(file) {
             if let Some(parent) = path.parent() {
@@ -448,6 +458,7 @@ impl Cache {
         Err(CacheError::Path.into())
     }
 
+    /// Removes a cached audio file.
     pub fn remove_file(&self, file: FileId) -> Result<(), Error> {
         let path = self.file_path(file).ok_or(CacheError::Path)?;
 

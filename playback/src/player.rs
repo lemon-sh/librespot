@@ -43,7 +43,9 @@ use tokio::sync::{mpsc, oneshot};
 use crate::SAMPLES_PER_SECOND;
 
 const PRELOAD_NEXT_TRACK_BEFORE_END_DURATION_MS: u32 = 30000;
+/// Ratio used to convert between decibels and voltage/amplitude (20 * log10).
 pub const DB_VOLTAGE_RATIO: f64 = 20.0;
+/// Full-scale PCM amplitude (0 dBFS).
 pub const PCM_AT_0DBFS: f64 = 1.0;
 
 // Spotify inserts a custom Ogg packet at the start with custom metadata values, that you would
@@ -52,6 +54,7 @@ const SPOTIFY_OGG_HEADER_END: u64 = 0xa7;
 
 const LOAD_HANDLES_POISON_MSG: &str = "load handles mutex should not be poisoned";
 
+/// A result type for player operations.
 pub type PlayerResult = Result<(), Error>;
 
 /// The main player handle.
@@ -66,13 +69,18 @@ pub struct Player {
     thread_handle: Option<thread::JoinHandle<()>>,
 }
 
+/// Status of the audio output sink.
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum SinkStatus {
+    /// The sink is actively playing audio.
     Running,
+    /// The sink has been permanently closed.
     Closed,
+    /// The sink is temporarily closed (e.g. during pause).
     TemporarilyClosed,
 }
 
+/// Callback function type for sink status change events.
 pub type SinkEventCallback = Box<dyn Fn(SinkStatus) + Send>;
 
 struct PlayerInternal {
@@ -156,7 +164,9 @@ enum PlayerCommand {
 /// Represents a track in the queue with its URI and provider.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct QueueTrack {
+    /// The Spotify URI of the track.
     pub uri: String,
+    /// The provider that supplies the track (e.g. "queue", "context").
     pub provider: String,
 }
 
@@ -166,122 +176,183 @@ pub struct QueueTrack {
 /// the track URI, play request ID, and position.
 #[derive(Debug, Clone)]
 pub enum PlayerEvent {
-    // Play request id changed
+    /// The play request ID changed (new track or group of tracks).
     PlayRequestIdChanged {
+        /// The new play request ID.
         play_request_id: u64,
     },
-    // Fired when the player is stopped (e.g. by issuing a "stop" command to the player).
+    /// The player was stopped (e.g. by issuing a "stop" command).
     Stopped {
+        /// The play request ID of the stopped track.
         play_request_id: u64,
+        /// The URI of the stopped track.
         track_id: SpotifyUri,
     },
-    // The player is delayed by loading a track.
+    /// The player is delayed by loading a track.
     Loading {
+        /// The play request ID for this load.
         play_request_id: u64,
+        /// The URI of the track being loaded.
         track_id: SpotifyUri,
+        /// The position in milliseconds to start playback from.
         position_ms: u32,
     },
-    // The player is preloading a track.
+    /// The player is preloading a track for gapless playback.
     Preloading {
+        /// The URI of the track being preloaded.
         track_id: SpotifyUri,
     },
-    // The player is playing a track.
-    // This event is issued at the start of playback of whenever the position must be communicated
-    // because it is out of sync. This includes:
-    // start of a track
-    // un-pausing
-    // after a seek
-    // after a buffer-underrun
+    /// The player is playing a track.
+    ///
+    /// This event is issued at the start of playback or whenever the position must be communicated
+    /// because it is out of sync. This includes:
+    /// - start of a track
+    /// - un-pausing
+    /// - after a seek
+    /// - after a buffer-underrun
     Playing {
+        /// The play request ID for this track.
         play_request_id: u64,
+        /// The URI of the track being played.
         track_id: SpotifyUri,
+        /// The current position in milliseconds.
         position_ms: u32,
     },
-    // The player entered a paused state.
+    /// The player entered a paused state.
     Paused {
+        /// The play request ID of the paused track.
         play_request_id: u64,
+        /// The URI of the paused track.
         track_id: SpotifyUri,
+        /// The position in milliseconds when paused.
         position_ms: u32,
     },
-    // The player thinks it's a good idea to issue a preload command for the next track now.
-    // This event is intended for use within spirc.
+    /// The player suggests preloading the next track now.
+    ///
+    /// This event is intended for use within Spirc.
     TimeToPreloadNextTrack {
+        /// The play request ID of the current track.
         play_request_id: u64,
+        /// The URI of the current track.
         track_id: SpotifyUri,
     },
-    // The player reached the end of a track.
-    // This event is intended for use within spirc. Spirc will respond by issuing another command.
+    /// The player reached the end of a track.
+    ///
+    /// This event is intended for use within Spirc. Spirc will respond by issuing another command.
     EndOfTrack {
+        /// The play request ID of the ended track.
         play_request_id: u64,
+        /// The URI of the ended track.
         track_id: SpotifyUri,
     },
-    // The player was unable to load the requested track.
+    /// The player was unable to load the requested track.
     Unavailable {
+        /// The play request ID of the unavailable track.
         play_request_id: u64,
+        /// The URI of the unavailable track.
         track_id: SpotifyUri,
     },
-    // The mixer volume was set to a new level.
+    /// The mixer volume was set to a new level.
     VolumeChanged {
+        /// The new volume level (0–65535).
         volume: u16,
     },
+    /// The player corrected the playback position due to drift.
     PositionCorrection {
+        /// The play request ID of the track.
         play_request_id: u64,
+        /// The URI of the track.
         track_id: SpotifyUri,
+        /// The corrected position in milliseconds.
         position_ms: u32,
     },
-    /// Requires `PlayerConfig::position_update_interval` to be set to Some.
-    /// Once set this event will be sent periodically while playing the track to inform about the
-    /// current playback position
+    /// Periodic position update while playing a track.
+    ///
+    /// Requires [`PlayerConfig::position_update_interval`](crate::config::PlayerConfig::position_update_interval) to be set.
     PositionChanged {
+        /// The play request ID of the track.
         play_request_id: u64,
+        /// The URI of the track.
         track_id: SpotifyUri,
+        /// The current position in milliseconds.
         position_ms: u32,
     },
+    /// The player seeked to a new position.
     Seeked {
+        /// The play request ID of the track.
         play_request_id: u64,
+        /// The URI of the track.
         track_id: SpotifyUri,
+        /// The new position in milliseconds.
         position_ms: u32,
     },
+    /// The current track changed.
     TrackChanged {
+        /// The audio item metadata for the new track.
         audio_item: Box<AudioItem>,
     },
+    /// A Spotify Connect session was established.
     SessionConnected {
+        /// The connection ID.
         connection_id: String,
+        /// The user name of the connected session.
         user_name: String,
     },
+    /// A Spotify Connect session was disconnected.
     SessionDisconnected {
+        /// The connection ID.
         connection_id: String,
+        /// The user name of the disconnected session.
         user_name: String,
     },
+    /// The Spotify Connect client changed.
     SessionClientChanged {
+        /// The client ID.
         client_id: String,
+        /// The client name.
         client_name: String,
+        /// The client brand name.
         client_brand_name: String,
+        /// The client model name.
         client_model_name: String,
     },
+    /// Shuffle mode was changed.
     ShuffleChanged {
+        /// Whether shuffle is enabled.
         shuffle: bool,
     },
+    /// Repeat mode was changed.
     RepeatChanged {
+        /// Whether context (album/playlist) repeat is enabled.
         context: bool,
+        /// Whether single track repeat is enabled.
         track: bool,
     },
+    /// Auto-play was changed.
     AutoPlayChanged {
+        /// Whether auto-play is enabled.
         auto_play: bool,
     },
+    /// Explicit content filter was changed.
     FilterExplicitContentChanged {
+        /// Whether explicit content filtering is enabled.
         filter: bool,
     },
     /// Fired when the queue is set or context is loaded with its track list.
     SetQueue {
+        /// The URI of the context (album, playlist, etc.).
         context_uri: String,
+        /// The current track in the queue, if any.
         current_track: Option<QueueTrack>,
+        /// The upcoming tracks in the queue.
         next_tracks: Vec<QueueTrack>,
+        /// The previously played tracks in the queue.
         prev_tracks: Vec<QueueTrack>,
     },
 }
 
 impl PlayerEvent {
+    /// Returns the play request ID associated with this event, if any.
     pub fn get_play_request_id(&self) -> Option<u64> {
         use PlayerEvent::*;
         match self {
@@ -317,33 +388,44 @@ impl PlayerEvent {
     }
 }
 
+/// Channel type for receiving player events.
 pub type PlayerEventChannel = mpsc::UnboundedReceiver<PlayerEvent>;
 
+/// Converts a decibel value to a linear voltage ratio.
 #[inline]
 pub fn db_to_ratio(db: f64) -> f64 {
     f64::powf(10.0, db / DB_VOLTAGE_RATIO)
 }
 
+/// Converts a linear voltage ratio to a decibel value.
 #[inline]
 pub fn ratio_to_db(ratio: f64) -> f64 {
     ratio.log10() * DB_VOLTAGE_RATIO
 }
 
+/// Converts a duration to an exponential decay coefficient for normalisation smoothing.
 pub fn duration_to_coefficient(duration: Duration) -> f64 {
     f64::exp(-1.0 / (duration.as_secs_f64() * SAMPLES_PER_SECOND as f64))
 }
 
+/// Converts an exponential decay coefficient back to a duration.
 pub fn coefficient_to_duration(coefficient: f64) -> Duration {
     Duration::from_secs_f64(-1.0 / f64::ln(coefficient) / SAMPLES_PER_SECOND as f64)
 }
 
+/// Audio normalisation data parsed from track metadata.
+///
+/// Contains ReplayGain-style track and album gain/peak values used for
+/// volume normalisation during playback.
 #[derive(Clone, Copy, Debug)]
 pub struct NormalisationData {
-    // Spotify provides these as `f32`, but audio metadata can contain up to `f64`.
-    // Also, this negates the need for casting during sample processing.
+    /// Track gain in decibels.
     pub track_gain_db: f64,
+    /// Track peak amplitude (0.0–1.0).
     pub track_peak: f64,
+    /// Album gain in decibels.
     pub album_gain_db: f64,
+    /// Album peak amplitude (0.0–1.0).
     pub album_peak: f64,
 }
 
@@ -464,6 +546,10 @@ impl NormalisationData {
 }
 
 impl Player {
+    /// Creates a new player instance.
+    ///
+    /// Spawns an internal thread that runs the player event loop. Returns
+    /// an `Arc<Player>` handle for controlling playback.
     pub fn new<F>(
         config: PlayerConfig,
         session: Session,
@@ -557,6 +643,7 @@ impl Player {
         })
     }
 
+    /// Returns `true` if the player's internal thread has finished.
     pub fn is_invalid(&self) -> bool {
         if let Some(handle) = self.thread_handle.as_ref() {
             return handle.is_finished();
@@ -572,6 +659,10 @@ impl Player {
         }
     }
 
+    /// Loads a track for playback.
+    ///
+    /// If `start_playing` is `true`, playback begins immediately. Otherwise
+    /// the track is loaded in a paused state.
     pub fn load(&self, track_id: SpotifyUri, start_playing: bool, position_ms: u32) {
         self.command(PlayerCommand::Load {
             track_id,
@@ -580,36 +671,44 @@ impl Player {
         });
     }
 
+    /// Preloads a track for gapless playback.
     pub fn preload(&self, track_id: SpotifyUri) {
         self.command(PlayerCommand::Preload { track_id });
     }
 
+    /// Resumes playback from a paused state.
     pub fn play(&self) {
         self.command(PlayerCommand::Play)
     }
 
+    /// Pauses playback.
     pub fn pause(&self) {
         self.command(PlayerCommand::Pause)
     }
 
+    /// Stops playback entirely.
     pub fn stop(&self) {
         self.command(PlayerCommand::Stop)
     }
 
+    /// Seeks to the specified position in milliseconds.
     pub fn seek(&self, position_ms: u32) {
         self.command(PlayerCommand::Seek(position_ms));
     }
 
+    /// Sets the session for this player instance.
     pub fn set_session(&self, session: Session) {
         self.command(PlayerCommand::SetSession(session));
     }
 
+    /// Subscribes to player events. Returns a channel receiver that yields events.
     pub fn get_player_event_channel(&self) -> PlayerEventChannel {
         let (event_sender, event_receiver) = mpsc::unbounded_channel();
         self.command(PlayerCommand::AddEventSender(event_sender));
         event_receiver
     }
 
+    /// Waits for the current track to finish playing or be stopped.
     pub async fn await_end_of_track(&self) {
         let mut channel = self.get_player_event_channel();
         while let Some(event) = channel.recv().await {
@@ -622,22 +721,27 @@ impl Player {
         }
     }
 
+    /// Sets a callback for sink status change events.
     pub fn set_sink_event_callback(&self, callback: Option<SinkEventCallback>) {
         self.command(PlayerCommand::SetSinkEventCallback(callback));
     }
 
+    /// Emits a volume changed event.
     pub fn emit_volume_changed_event(&self, volume: u16) {
         self.command(PlayerCommand::EmitVolumeChangedEvent(volume));
     }
 
+    /// Sets whether to use album-based normalisation when type is Auto.
     pub fn set_auto_normalise_as_album(&self, setting: bool) {
         self.command(PlayerCommand::SetAutoNormaliseAsAlbum(setting));
     }
 
+    /// Emits a filter explicit content changed event.
     pub fn emit_filter_explicit_content_changed_event(&self, filter: bool) {
         self.command(PlayerCommand::EmitFilterExplicitContentChangedEvent(filter));
     }
 
+    /// Emits a session connected event.
     pub fn emit_session_connected_event(&self, connection_id: String, user_name: String) {
         self.command(PlayerCommand::EmitSessionConnectedEvent {
             connection_id,
@@ -645,6 +749,7 @@ impl Player {
         });
     }
 
+    /// Emits a session disconnected event.
     pub fn emit_session_disconnected_event(&self, connection_id: String, user_name: String) {
         self.command(PlayerCommand::EmitSessionDisconnectedEvent {
             connection_id,
@@ -652,6 +757,7 @@ impl Player {
         });
     }
 
+    /// Emits a session client changed event.
     pub fn emit_session_client_changed_event(
         &self,
         client_id: String,
@@ -667,18 +773,22 @@ impl Player {
         });
     }
 
+    /// Emits a shuffle changed event.
     pub fn emit_shuffle_changed_event(&self, shuffle: bool) {
         self.command(PlayerCommand::EmitShuffleChangedEvent(shuffle));
     }
 
+    /// Emits a repeat changed event.
     pub fn emit_repeat_changed_event(&self, context: bool, track: bool) {
         self.command(PlayerCommand::EmitRepeatChangedEvent { context, track });
     }
 
+    /// Emits an auto-play changed event.
     pub fn emit_auto_play_changed_event(&self, auto_play: bool) {
         self.command(PlayerCommand::EmitAutoPlayChangedEvent(auto_play));
     }
 
+    /// Emits a set queue event.
     pub fn emit_set_queue_event(
         &self,
         context_uri: String,

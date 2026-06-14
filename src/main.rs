@@ -1,3 +1,5 @@
+//! librespot Spotify Connect client.
+
 use data_encoding::HEXLOWER;
 use futures_util::StreamExt;
 #[cfg(feature = "alsa-backend")]
@@ -96,18 +98,29 @@ fn list_backends() {
     }
 }
 
+/// Error type for file size string parsing.
 #[derive(Debug, Error)]
 pub enum ParseFileSizeError {
+    /// The input string was empty.
     #[error("empty argument")]
     EmptyInput,
+    /// The input string had an invalid suffix (e.g. not a recognized unit like K, M, G, etc.).
     #[error("invalid suffix")]
     InvalidSuffix,
+    /// The numeric portion of the input could not be parsed as a float.
     #[error("invalid number: {0}")]
     InvalidNumber(#[from] std::num::ParseFloatError),
+    /// The parsed number was not finite (e.g. NaN or infinity).
     #[error("non-finite number specified")]
     NotFinite(f64),
 }
 
+/// Parses a human-readable file size string (e.g. "16G", "500M", "1024K") into bytes.
+///
+/// Supports both SI (1000-based) and IEC (1024-based) suffixes. IEC suffixes use an
+/// `i` or `I` before the unit letter (e.g. "16Gi", "500Mi").
+///
+/// Supported suffixes: K, M, G, T, P, E, Z, Y (and their IEC variants).
 pub fn parse_file_size(input: &str) -> Result<u64, ParseFileSizeError> {
     use ParseFileSizeError::*;
 

@@ -14,14 +14,20 @@ pub use protocol::metadata::image::Size as ImageSize;
 use protocol::playlist_annotate3::TranscodedPicture as TranscodedPictureMessage;
 use protocol::playlist4_external::PictureSize as PictureSizeMessage;
 
+/// An image associated with a Spotify resource (e.g., cover art).
 #[derive(Debug, Clone)]
 pub struct Image {
+    /// The file identifier for the image data.
     pub id: FileId,
+    /// The size category of the image.
     pub size: ImageSize,
+    /// The width of the image in pixels.
     pub width: i32,
+    /// The height of the image in pixels.
     pub height: i32,
 }
 
+/// A list of [`Image`]s.
 #[derive(Debug, Clone, Default)]
 pub struct Images(pub Vec<Image>);
 
@@ -33,23 +39,31 @@ impl From<&ImageGroup> for Images {
 
 impl_deref_wrapped!(Images, Vec<Image>);
 
+/// A named picture size variant with a URL.
 #[derive(Debug, Clone)]
 pub struct PictureSize {
+    /// The name of the target size (e.g., `"Standard"`, `"Large"`).
     pub target_name: String,
+    /// The URL to the image.
     pub url: String,
 }
 
+/// A list of [`PictureSize`]s.
 #[derive(Debug, Clone, Default)]
 pub struct PictureSizes(pub Vec<PictureSize>);
 
 impl_deref_wrapped!(PictureSizes, Vec<PictureSize>);
 
+/// A transcoded picture with a target name and Spotify URI.
 #[derive(Debug, Clone)]
 pub struct TranscodedPicture {
+    /// The name of the transcoded target.
     pub target_name: String,
+    /// The Spotify URI of the transcoded picture.
     pub uri: SpotifyUri,
 }
 
+/// A list of [`TranscodedPicture`]s.
 #[derive(Debug, Clone)]
 pub struct TranscodedPictures(pub Vec<TranscodedPicture>);
 

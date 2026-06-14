@@ -35,6 +35,9 @@ impl From<StdoutError> for SinkError {
     }
 }
 
+/// Audio sink that outputs to stdout or a file.
+///
+/// Useful for piping audio to other programs or saving to a file.
 pub struct StdoutSink {
     output: Option<Box<dyn Write>>,
     file: Option<String>,
@@ -109,5 +112,6 @@ impl SinkAsBytes for StdoutSink {
 }
 
 impl StdoutSink {
+    /// Name of this audio backend ("pipe").
     pub const NAME: &'static str = "pipe";
 }

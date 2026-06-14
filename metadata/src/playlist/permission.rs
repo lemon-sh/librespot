@@ -9,16 +9,24 @@ use librespot_protocol as protocol;
 use protocol::playlist_permission::Capabilities as CapabilitiesMessage;
 use protocol::playlist_permission::PermissionLevel;
 
+/// A user's permission capabilities for a playlist.
 #[derive(Debug, Clone)]
 pub struct Capabilities {
+    /// Whether the user can view the playlist.
     pub can_view: bool,
+    /// Whether the user can manage permissions for the playlist.
     pub can_administrate_permissions: bool,
+    /// The permission levels that can be granted.
     pub grantable_levels: PermissionLevels,
+    /// Whether the user can edit playlist metadata.
     pub can_edit_metadata: bool,
+    /// Whether the user can edit playlist items.
     pub can_edit_items: bool,
+    /// Whether the user can cancel their own membership.
     pub can_cancel_membership: bool,
 }
 
+/// A list of [`PermissionLevel`]s.
 #[derive(Debug, Clone, Default)]
 pub struct PermissionLevels(pub Vec<PermissionLevel>);
 

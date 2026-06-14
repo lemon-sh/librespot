@@ -45,14 +45,19 @@ use uuid::Uuid;
 
 const SESSION_DATA_POISON_MSG: &str = "session data rwlock should not be poisoned";
 
+/// Errors that can occur during session operations.
 #[derive(Debug, Error)]
 pub enum SessionError {
+    /// Authentication failed.
     #[error(transparent)]
     AuthenticationError(#[from] AuthenticationError),
+    /// An I/O error occurred while establishing the connection.
     #[error("Cannot create session: {0}")]
     IoError(#[from] io::Error),
+    /// The session is not connected to any server.
     #[error("Session is not connected")]
     NotConnected,
+    /// An unknown or unsupported packet type was received.
     #[error("packet {0} unknown")]
     Packet(u8),
 }
@@ -74,12 +79,17 @@ impl From<quick_xml::encoding::EncodingError> for Error {
     }
 }
 
+/// A map of user attribute keys to their values.
 pub type UserAttributes = HashMap<String, String>;
 
+/// User data for the authenticated Spotify account.
 #[derive(Debug, Clone, Default)]
 pub struct UserData {
+    /// The user's country code.
     pub country: String,
+    /// The user's canonical username.
     pub canonical_username: String,
+    /// User attributes received from the server (product type, etc.).
     pub attributes: UserAttributes,
 }
 
@@ -164,6 +174,7 @@ struct SessionInternal {
 pub struct Session(Arc<SessionInternal>);
 
 impl Session {
+    /// Creates a new session with the given configuration and optional cache.
     pub fn new(config: SessionConfig, cache: Option<Cache>) -> Self {
         let http_client = HttpClient::new(config.proxy.as_ref());
 
@@ -404,6 +415,7 @@ impl Session {
             .get_or_init(|| Login5Manager::new(self.weak()))
     }
 
+    /// Returns the clock delta between the server and client in seconds.
     pub fn time_delta(&self) -> i64 {
         self.0
             .data
@@ -412,6 +424,7 @@ impl Session {
             .time_delta
     }
 
+    /// Spawns a future on the session's tokio runtime.
     pub fn spawn<T>(&self, task: T)
     where
         T: Future + Send + 'static,
@@ -471,6 +484,7 @@ impl Session {
             .clone()
     }
 
+    /// Returns the unique session identifier.
     pub fn session_id(&self) -> String {
         self.0
             .data
@@ -480,6 +494,7 @@ impl Session {
             .clone()
     }
 
+    /// Sets the session identifier.
     pub fn set_session_id(&self, session_id: &str) {
         session_id.clone_into(
             &mut self
@@ -496,6 +511,7 @@ impl Session {
         &self.config().device_id
     }
 
+    /// Returns the OAuth client ID.
     pub fn client_id(&self) -> String {
         self.0
             .data
@@ -505,6 +521,7 @@ impl Session {
             .clone()
     }
 
+    /// Sets the OAuth client ID.
     pub fn set_client_id(&self, client_id: &str) {
         client_id.clone_into(
             &mut self
@@ -516,6 +533,7 @@ impl Session {
         );
     }
 
+    /// Returns the client name.
     pub fn client_name(&self) -> String {
         self.0
             .data
@@ -525,6 +543,7 @@ impl Session {
             .clone()
     }
 
+    /// Sets the client name.
     pub fn set_client_name(&self, client_name: &str) {
         client_name.clone_into(
             &mut self
@@ -536,6 +555,7 @@ impl Session {
         );
     }
 
+    /// Returns the client brand name.
     pub fn client_brand_name(&self) -> String {
         self.0
             .data
@@ -545,6 +565,7 @@ impl Session {
             .clone()
     }
 
+    /// Sets the client brand name.
     pub fn set_client_brand_name(&self, client_brand_name: &str) {
         client_brand_name.clone_into(
             &mut self
@@ -556,6 +577,7 @@ impl Session {
         );
     }
 
+    /// Returns the client model name.
     pub fn client_model_name(&self) -> String {
         self.0
             .data
@@ -565,6 +587,7 @@ impl Session {
             .clone()
     }
 
+    /// Sets the client model name.
     pub fn set_client_model_name(&self, client_model_name: &str) {
         client_model_name.clone_into(
             &mut self
@@ -576,6 +599,7 @@ impl Session {
         );
     }
 
+    /// Returns the connection identifier.
     pub fn connection_id(&self) -> String {
         self.0
             .data
@@ -585,6 +609,7 @@ impl Session {
             .clone()
     }
 
+    /// Sets the connection identifier.
     pub fn set_connection_id(&self, connection_id: &str) {
         connection_id.clone_into(
             &mut self
@@ -596,6 +621,7 @@ impl Session {
         );
     }
 
+    /// Returns the authenticated user's canonical username.
     pub fn username(&self) -> String {
         self.0
             .data
@@ -606,6 +632,7 @@ impl Session {
             .clone()
     }
 
+    /// Sets the authenticated user's canonical username.
     pub fn set_username(&self, username: &str) {
         username.clone_into(
             &mut self
@@ -618,6 +645,7 @@ impl Session {
         );
     }
 
+    /// Returns the authentication data (stored credentials blob).
     pub fn auth_data(&self) -> Vec<u8> {
         self.0
             .data
@@ -627,6 +655,7 @@ impl Session {
             .clone()
     }
 
+    /// Sets the authentication data (stored credentials blob).
     pub fn set_auth_data(&self, auth_data: &[u8]) {
         auth_data.clone_into(
             &mut self
@@ -638,6 +667,7 @@ impl Session {
         );
     }
 
+    /// Returns the user's country code.
     pub fn country(&self) -> String {
         self.0
             .data
@@ -648,6 +678,7 @@ impl Session {
             .clone()
     }
 
+    /// Returns whether explicit content filtering is enabled.
     pub fn filter_explicit_content(&self) -> bool {
         match self.get_user_attribute("filter-explicit-content") {
             Some(value) => matches!(&*value, "1"),
@@ -655,6 +686,7 @@ impl Session {
         }
     }
 
+    /// Returns whether autoplay is enabled, checking config override first.
     pub fn autoplay(&self) -> bool {
         if let Some(overide) = self.config().autoplay {
             return overide;
@@ -666,6 +698,7 @@ impl Session {
         }
     }
 
+    /// Sets a single user attribute, returning the previous value if any.
     pub fn set_user_attribute(&self, key: &str, value: &str) -> Option<String> {
         let mut dummy_attributes = UserAttributes::new();
         dummy_attributes.insert(key.to_owned(), value.to_owned());
@@ -680,6 +713,7 @@ impl Session {
             .insert(key.to_owned(), value.to_owned())
     }
 
+    /// Merges multiple user attributes into the session.
     pub fn set_user_attributes(&self, attributes: UserAttributes) {
         Self::check_catalogue(&attributes);
 
@@ -692,6 +726,7 @@ impl Session {
             .extend(attributes)
     }
 
+    /// Returns a user attribute value by key, if it exists.
     pub fn get_user_attribute(&self, key: &str) -> Option<String> {
         self.0
             .data

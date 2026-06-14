@@ -33,36 +33,58 @@ use librespot_protocol as protocol;
 #[macro_use]
 mod component;
 
+/// Access point resolution for Spotify's servers.
 pub mod apresolve;
+/// Audio key management for decrypting audio streams.
 pub mod audio_key;
+/// Credentials for authenticating with Spotify.
 pub mod authentication;
+/// Persistent caching for credentials, volume, and audio files.
 pub mod cache;
+/// CDN URL resolution for audio storage.
 pub mod cdn_url;
+/// Binary data streaming channels.
 pub mod channel;
+/// Configuration types for [`Session`](crate::Session).
 pub mod config;
 mod connection;
+/// Date and time utilities.
 pub mod date;
 #[allow(dead_code)]
+/// Dealer WebSocket message bus for real-time commands.
 pub mod dealer;
+/// Custom serde deserialization helpers.
 pub mod deserialize_with;
 #[doc(hidden)]
 pub mod diffie_hellman;
+/// Unified error type for librespot.
 pub mod error;
+/// Audio and image file identifiers.
 pub mod file_id;
+/// HTTP client with rate limiting and proxy support.
 pub mod http_client;
+/// Login5 authentication protocol.
 pub mod login5;
+/// Mercury pub/sub protocol (legacy).
 pub mod mercury;
+/// Spotify packet type definitions.
 pub mod packet;
 mod proxytunnel;
+/// Session management and server communication.
 pub mod session;
 mod socket;
 #[allow(dead_code)]
+/// Spotify Web API client (spclient).
 pub mod spclient;
+/// Spotify resource identifiers.
 pub mod spotify_id;
+/// Typed Spotify URIs.
 pub mod spotify_uri;
+/// Access token management.
 pub mod token;
 #[doc(hidden)]
 pub mod util;
+/// Build and protocol version constants.
 pub mod version;
 
 pub use config::SessionConfig;

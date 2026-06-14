@@ -46,6 +46,10 @@ enum ZeroconfCmd {
     Shutdown,
 }
 
+/// A handle to a running DNS-SD service.
+///
+/// Dropping this handle will shut down the service. Use [`DnsSdHandle::shutdown`]
+/// to explicitly shut down the service and wait for it to complete.
 pub struct DnsSdHandle {
     task_handle: tokio::task::JoinHandle<()>,
     shutdown_tx: oneshot::Sender<ZeroconfCmd>,
@@ -67,6 +71,10 @@ impl DnsSdHandle {
     }
 }
 
+/// A function pointer type for constructing a DNS-SD service.
+///
+/// Given a service name, IP addresses, port, and an event channel, this function
+/// launches a DNS-SD service and returns a handle to it.
 pub type DnsSdServiceBuilder = fn(
     Cow<'static, str>,
     Vec<std::net::IpAddr>,
@@ -76,6 +84,10 @@ pub type DnsSdServiceBuilder = fn(
 
 // Default goes first: This matches the behaviour when feature flags were exlusive, i.e. when there
 // was only `feature = "with-dns-sd"` or `not(feature = "with-dns-sd")`
+/// A list of available DNS-SD backends.
+///
+/// Each entry is a tuple of a backend name and an optional builder function.
+/// If the backend was not compiled (feature not enabled), the builder is `None`.
 pub const BACKENDS: &[(
     &str,
     // If None, the backend is known but wasn't compiled.
@@ -95,6 +107,13 @@ pub const BACKENDS: &[(
     ("libmdns", None),
 ];
 
+/// Finds a DNS-SD service builder by name.
+///
+/// If `name` is `Some`, looks for a backend with the given name. If `name` is
+/// `None`, returns the first available backend.
+///
+/// # Errors
+/// Returns an error if the backend is not found or was not compiled.
 pub fn find(name: Option<&str>) -> Result<DnsSdServiceBuilder, Error> {
     if let Some(ref name) = name {
         match BACKENDS.iter().find(|(id, _)| name == id) {
@@ -141,18 +160,23 @@ pub struct Builder {
 /// Errors that can occur while setting up a [`Discovery`] instance.
 #[derive(Debug, Error)]
 pub enum DiscoveryError {
+    /// Failed to create the AES-128 block cipher.
     #[error("Creating SHA1 block cipher failed")]
     AesError(#[from] aes::cipher::InvalidLength),
 
+    /// Failed to set up the DNS-SD service.
     #[error("Setting up dns-sd failed: {0}")]
     DnsSdError(#[source] Box<dyn StdError + Send + Sync>),
 
+    /// Failed to create the SHA1 HMAC for the given base key.
     #[error("Creating SHA1 HMAC failed for base key {0:?}")]
     HmacError(Vec<u8>),
 
+    /// Failed to set up the HTTP server.
     #[error("Setting up the HTTP server failed: {0}")]
     HttpServerError(#[from] hyper::Error),
 
+    /// Missing required parameters for the given key.
     #[error("Missing params for key {0}")]
     ParamsError(&'static str),
 }
@@ -535,6 +559,7 @@ impl Discovery {
         Self::builder(device_id, client_id).launch()
     }
 
+    /// Shuts down the discovery server and the DNS-SD service.
     pub async fn shutdown(self) {
         tokio::join!(self.server.shutdown(), self.svc.shutdown(),);
     }

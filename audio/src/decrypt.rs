@@ -23,6 +23,9 @@ pub struct AudioDecrypt<T: io::Read> {
 }
 
 impl<T: io::Read> AudioDecrypt<T> {
+    /// Creates a new `AudioDecrypt` that decrypts data from `reader` using the given `key`.
+    ///
+    /// If `key` is `None`, the data is passed through unmodified (for unencrypted files).
     pub fn new(key: Option<AudioKey>, reader: T) -> AudioDecrypt<T> {
         let cipher = if let Some(key) = key {
             Aes128Ctr::new_from_slices(&key.0, &AUDIO_AESIV).ok()

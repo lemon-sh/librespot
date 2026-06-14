@@ -4,10 +4,15 @@ use crate::MetadataError;
 
 use librespot_core::{Error, Session};
 
+/// The result type for metadata requests, containing raw protobuf bytes.
 pub type RequestResult = Result<bytes::Bytes, Error>;
 
+/// Trait for making Mercury-based metadata requests.
+///
+/// Automatically appends country and product parameters to the request URI.
 #[async_trait]
 pub trait MercuryRequest {
+    /// Sends a Mercury GET request and returns the response payload.
     async fn request(session: &Session, uri: &str) -> RequestResult {
         let mut metrics_uri = uri.to_owned();
 

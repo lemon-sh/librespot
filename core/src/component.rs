@@ -3,6 +3,7 @@ pub(crate) const COMPONENT_POISON_MSG: &str = "component mutex should not be poi
 macro_rules! component {
     ($name:ident : $inner:ident { $($key:ident : $ty:ty = $value:expr,)* }) => {
         #[derive(Clone)]
+        #[allow(missing_docs)]
         pub struct $name(::std::sync::Arc<($crate::session::SessionWeak, ::std::sync::Mutex<$inner>)>);
         impl $name {
             #[allow(dead_code)]

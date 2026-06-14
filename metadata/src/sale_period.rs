@@ -13,13 +13,19 @@ use librespot_core::date::Date;
 use librespot_protocol as protocol;
 use protocol::metadata::SalePeriod as SalePeriodMessage;
 
+/// A time period during which a Spotify resource is available for sale,
+/// along with any applicable restrictions.
 #[derive(Debug, Clone)]
 pub struct SalePeriod {
+    /// Restrictions that apply during this sale period.
     pub restrictions: Restrictions,
+    /// The start date of the sale period.
     pub start: Date,
+    /// The end date of the sale period.
     pub end: Date,
 }
 
+/// A list of [`SalePeriod`]s.
 #[derive(Debug, Clone, Default)]
 pub struct SalePeriods(pub Vec<SalePeriod>);
 

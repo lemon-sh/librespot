@@ -11,11 +11,13 @@ use librespot_protocol as protocol;
 use protocol::storage_resolve::StorageResolveResponse as CdnUrlMessage;
 use protocol::storage_resolve::storage_resolve_response::Result as StorageResolveResponse_Result;
 
+/// A CDN URL that may have an expiration timestamp.
 #[derive(Debug, Clone)]
 pub struct MaybeExpiringUrl(pub String, pub Option<Date>);
 
 const CDN_URL_EXPIRY_MARGIN: Duration = Duration::seconds(5 * 60);
 
+/// A collection of CDN URLs that may have expiration timestamps.
 #[derive(Debug, Clone)]
 pub struct MaybeExpiringUrls(pub Vec<MaybeExpiringUrl>);
 
@@ -32,12 +34,16 @@ impl DerefMut for MaybeExpiringUrls {
     }
 }
 
+/// Errors that can occur when resolving CDN URLs.
 #[derive(Debug, Error)]
 pub enum CdnUrlError {
+    /// All resolved URLs have expired.
     #[error("all URLs expired")]
     Expired,
+    /// The resolved storage is not a CDN endpoint.
     #[error("resolved storage is not for CDN")]
     Storage,
+    /// No URLs were resolved.
     #[error("no URLs resolved")]
     Unresolved,
 }
@@ -51,13 +57,16 @@ impl From<CdnUrlError> for Error {
     }
 }
 
+/// A CDN URL for an audio file, with resolved alternative URLs.
 #[derive(Debug, Clone)]
 pub struct CdnUrl {
+    /// The file identifier.
     pub file_id: FileId,
     urls: MaybeExpiringUrls,
 }
 
 impl CdnUrl {
+    /// Creates a new empty `CdnUrl` for the given file ID.
     pub fn new(file_id: FileId) -> Self {
         Self {
             file_id,
@@ -65,6 +74,7 @@ impl CdnUrl {
         }
     }
 
+    /// Resolves the CDN URLs for this file via the storage-resolve endpoint.
     pub async fn resolve_audio(&self, session: &Session) -> Result<Self, Error> {
         let file_id = self.file_id;
         let response = session.spclient().get_audio_storage(&file_id).await?;
@@ -78,6 +88,7 @@ impl CdnUrl {
         Ok(cdn_url)
     }
 
+    /// Returns the first non-expired CDN URL.
     #[deprecated = "This function only returns the first valid URL. Use try_get_urls instead, which allows for fallback logic."]
     pub fn try_get_url(&self) -> Result<&str, Error> {
         if self.urls.is_empty() {
@@ -97,6 +108,7 @@ impl CdnUrl {
         }
     }
 
+    /// Returns all non-expired CDN URLs for this file.
     pub fn try_get_urls(&self) -> Result<Vec<&str>, Error> {
         if self.urls.is_empty() {
             return Err(CdnUrlError::Unresolved.into());

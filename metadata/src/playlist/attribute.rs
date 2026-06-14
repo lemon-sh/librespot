@@ -22,20 +22,32 @@ use protocol::playlist4_external::ListAttributesPartialState as PlaylistPartialA
 use protocol::playlist4_external::UpdateItemAttributes as PlaylistUpdateItemAttributesMessage;
 use protocol::playlist4_external::UpdateListAttributes as PlaylistUpdateAttributesMessage;
 
+/// Playlist-level attributes such as name, description, and format.
 #[derive(Debug, Clone)]
 pub struct PlaylistAttributes {
+    /// The playlist name.
     pub name: String,
+    /// The playlist description.
     pub description: String,
+    /// The playlist picture (raw bytes).
     pub picture: Vec<u8>,
+    /// Whether the playlist is collaborative.
     pub is_collaborative: bool,
+    /// The playlist format version.
     pub pl3_version: String,
+    /// Whether the playlist was deleted by its owner.
     pub is_deleted_by_owner: bool,
+    /// The client that created the playlist.
     pub client_id: String,
+    /// The playlist format identifier.
     pub format: String,
+    /// Key-value format attributes.
     pub format_attributes: PlaylistFormatAttribute,
+    /// Available picture sizes.
     pub picture_sizes: PictureSizes,
 }
 
+/// A list of [`PlaylistAttributeKind`] values.
 #[derive(Debug, Clone, Default)]
 pub struct PlaylistAttributeKinds(pub Vec<PlaylistAttributeKind>);
 
@@ -43,21 +55,30 @@ impl_deref_wrapped!(PlaylistAttributeKinds, Vec<PlaylistAttributeKind>);
 
 impl_from_repeated_copy!(PlaylistAttributeKind, PlaylistAttributeKinds);
 
+/// Key-value format attributes for a playlist.
 #[derive(Debug, Clone, Default)]
 pub struct PlaylistFormatAttribute(pub HashMap<String, String>);
 
 impl_deref_wrapped!(PlaylistFormatAttribute, HashMap<String, String>);
 
+/// Attributes for an individual item in a playlist.
 #[derive(Debug, Clone)]
 pub struct PlaylistItemAttributes {
+    /// The username of the user who added the item.
     pub added_by: String,
+    /// When the item was added.
     pub timestamp: Date,
+    /// When the item was last seen.
     pub seen_at: Date,
+    /// Whether the item is publicly visible.
     pub is_public: bool,
+    /// Key-value format attributes.
     pub format_attributes: PlaylistFormatAttribute,
+    /// The item identifier.
     pub item_id: Vec<u8>,
 }
 
+/// A list of [`PlaylistItemAttributeKind`] values.
 #[derive(Debug, Clone, Default)]
 pub struct PlaylistItemAttributeKinds(pub Vec<PlaylistItemAttributeKind>);
 
@@ -65,6 +86,7 @@ impl_deref_wrapped!(PlaylistItemAttributeKinds, Vec<PlaylistItemAttributeKind>);
 
 impl_from_repeated_copy!(PlaylistItemAttributeKind, PlaylistItemAttributeKinds);
 
+/// Partial playlist attributes indicating which attributes are set or unset.
 #[derive(Debug, Clone)]
 pub struct PlaylistPartialAttributes {
     #[allow(dead_code)]
@@ -73,6 +95,7 @@ pub struct PlaylistPartialAttributes {
     no_value: PlaylistAttributeKinds,
 }
 
+/// Partial playlist item attributes indicating which attributes are set or unset.
 #[derive(Debug, Clone)]
 pub struct PlaylistPartialItemAttributes {
     #[allow(dead_code)]
@@ -81,16 +104,23 @@ pub struct PlaylistPartialItemAttributes {
     no_value: PlaylistItemAttributeKinds,
 }
 
+/// A change to playlist-level attributes.
 #[derive(Debug, Clone)]
 pub struct PlaylistUpdateAttributes {
+    /// The new attribute values.
     pub new_attributes: PlaylistPartialAttributes,
+    /// The old attribute values.
     pub old_attributes: PlaylistPartialAttributes,
 }
 
+/// A change to item-level attributes at a specific index.
 #[derive(Debug, Clone)]
 pub struct PlaylistUpdateItemAttributes {
+    /// The index of the item in the playlist.
     pub index: i32,
+    /// The new attribute values.
     pub new_attributes: PlaylistPartialItemAttributes,
+    /// The old attribute values.
     pub old_attributes: PlaylistPartialItemAttributes,
 }
 

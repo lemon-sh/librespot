@@ -32,56 +32,86 @@ use protocol::metadata::ArtistWithRole as ArtistWithRoleMessage;
 use protocol::metadata::Biography as BiographyMessage;
 use protocol::metadata::TopTracks as TopTracksMessage;
 
+/// A Spotify artist with their full metadata.
 #[derive(Debug, Clone)]
 pub struct Artist {
+    /// The Spotify URI of the artist.
     pub id: SpotifyUri,
+    /// The artist name.
     pub name: String,
+    /// Popularity score (0–100).
     pub popularity: i32,
+    /// Top tracks by country.
     pub top_tracks: CountryTopTracks,
+    /// Albums by this artist.
     pub albums: AlbumGroups,
+    /// Singles by this artist.
     pub singles: AlbumGroups,
+    /// Compilations by this artist.
     pub compilations: AlbumGroups,
+    /// Albums this artist appears on (features, collaborations).
     pub appears_on_albums: AlbumGroups,
+    /// External identifiers.
     pub external_ids: ExternalIds,
+    /// Portrait images.
     pub portraits: Images,
+    /// Artist biographies.
     pub biographies: Biographies,
+    /// Periods of artist activity.
     pub activity_periods: ActivityPeriods,
+    /// Geographic restrictions.
     pub restrictions: Restrictions,
+    /// Related artists.
     pub related: Artists,
+    /// Whether portraits are album covers.
     pub is_portrait_album_cover: bool,
+    /// Portrait image group.
     pub portrait_group: Images,
+    /// Sale periods.
     pub sales_periods: SalePeriods,
+    /// Availability information.
     pub availabilities: Availabilities,
 }
 
+/// A list of [`Artist`]s.
 #[derive(Debug, Clone, Default)]
 pub struct Artists(pub Vec<Artist>);
 
 impl_deref_wrapped!(Artists, Vec<Artist>);
 
+/// An artist with their role in a collaboration.
 #[derive(Debug, Clone)]
 pub struct ArtistWithRole {
+    /// The Spotify URI of the artist.
     pub id: SpotifyUri,
+    /// The artist name.
     pub name: String,
+    /// The artist's role (e.g., main artist, featured artist).
     pub role: ArtistRole,
 }
 
+/// A list of [`ArtistWithRole`]s.
 #[derive(Debug, Clone, Default)]
 pub struct ArtistsWithRole(pub Vec<ArtistWithRole>);
 
 impl_deref_wrapped!(ArtistsWithRole, Vec<ArtistWithRole>);
 
+/// Top tracks for a specific country.
 #[derive(Debug, Clone)]
 pub struct TopTracks {
+    /// The country code (e.g., `"US"`), or empty for global top tracks.
     pub country: String,
+    /// The top track URIs.
     pub tracks: Tracks,
 }
 
+/// A list of country-specific top tracks.
 #[derive(Debug, Clone, Default)]
 pub struct CountryTopTracks(pub Vec<TopTracks>);
 
 impl_deref_wrapped!(CountryTopTracks, Vec<TopTracks>);
 
+/// A group of album URIs representing different release variants of the same album.
 #[derive(Debug, Clone, Default)]
 pub struct AlbumGroup(pub Albums);
 
@@ -101,33 +131,45 @@ pub struct AlbumGroups(pub Vec<AlbumGroup>);
 
 impl_deref_wrapped!(AlbumGroups, Vec<AlbumGroup>);
 
+/// An artist biography entry.
 #[derive(Debug, Clone)]
 pub struct Biography {
+    /// The biography text.
     pub text: String,
+    /// Portrait images for the biography.
     pub portraits: Images,
+    /// Portrait image groups.
     pub portrait_group: Vec<Images>,
 }
 
+/// A list of [`Biography`] entries.
 #[derive(Debug, Clone, Default)]
 pub struct Biographies(pub Vec<Biography>);
 
 impl_deref_wrapped!(Biographies, Vec<Biography>);
 
+/// A period of artist activity.
 #[derive(Debug, Clone)]
 pub enum ActivityPeriod {
+    /// A timespan with a start year and optional end year.
     Timespan {
+        /// The start year of activity.
         start_year: u16,
+        /// The end year, or `None` if still active.
         end_year: Option<u16>,
     },
+    /// A specific decade of activity.
     Decade(u16),
 }
 
+/// A list of [`ActivityPeriod`]s.
 #[derive(Debug, Clone, Default)]
 pub struct ActivityPeriods(pub Vec<ActivityPeriod>);
 
 impl_deref_wrapped!(ActivityPeriods, Vec<ActivityPeriod>);
 
 impl CountryTopTracks {
+    /// Returns the top tracks for the given country code, falling back to global top tracks.
     pub fn for_country(&self, country: &str) -> Tracks {
         if let Some(country) = self.0.iter().find(|top_track| top_track.country == country) {
             return country.tracks.clone();

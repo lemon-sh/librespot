@@ -25,21 +25,38 @@ pub struct CoverImage {
     pub height: i32,
 }
 
+/// A unified representation for playable content (tracks and episodes).
+///
+/// Resolved by [`AudioItem::get_file`] from a [`SpotifyUri`]. Contains the
+/// audio files, metadata, and availability information needed by the
+/// playback pipeline.
 #[derive(Debug, Clone)]
 pub struct AudioItem {
+    /// The Spotify URI of this item.
     pub track_id: SpotifyUri,
+    /// String form of the URI.
     pub uri: String,
+    /// Available audio file formats (sorted by preference).
     pub files: AudioFiles,
+    /// Display name.
     pub name: String,
+    /// Cover art images.
     pub covers: Vec<CoverImage>,
+    /// Language tags (e.g., `["en"]`).
     pub language: Vec<String>,
+    /// Duration in milliseconds.
     pub duration_ms: u32,
+    /// Whether this item contains explicit content.
     pub is_explicit: bool,
+    /// Availability status for the current user.
     pub availability: AudioItemAvailability,
+    /// Alternative tracks if this one is unavailable.
     pub alternatives: Option<Tracks>,
+    /// Type-specific metadata (track, local, or episode).
     pub unique_fields: UniqueFields,
 }
 
+/// Type-specific metadata for an [`AudioItem`].
 #[derive(Debug, Clone)]
 pub enum UniqueFields {
     Track {
@@ -68,6 +85,11 @@ pub enum UniqueFields {
 }
 
 impl AudioItem {
+    /// Fetches and resolves an audio item from its Spotify URI.
+    ///
+    /// For tracks, fetches [`Track`] metadata. For episodes, fetches [`Episode`] metadata.
+    /// Checks availability and explicit content filters. Returns the unified [`AudioItem`]
+    /// with resolved file URLs.
     pub async fn get_file(session: &Session, uri: SpotifyUri) -> AudioItemResult {
         let image_url = session
             .get_user_attribute("image-url")

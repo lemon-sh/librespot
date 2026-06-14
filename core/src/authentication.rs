@@ -1,3 +1,9 @@
+//! Credentials for authenticating with Spotify.
+//!
+//! A [`Credentials`] holds the authentication type and data needed to log in.
+//! Obtain them via [`Credentials::with_password`], [`Credentials::with_access_token`],
+//! [`Credentials::with_blob`] (from discovery), or from the `Cache`.
+
 use std::io::{self, Read};
 
 use aes::Aes192;
@@ -58,6 +64,10 @@ impl Credentials {
         }
     }
 
+    /// Creates credentials from an OAuth access token.
+    ///
+    /// Note: token-authenticated sessions cannot use keymaster; a re-authentication
+    /// step is performed internally during [`Session::connect`](crate::Session::connect).
     pub fn with_access_token(token: impl Into<String>) -> Self {
         Self {
             username: None,
@@ -66,6 +76,10 @@ impl Credentials {
         }
     }
 
+    /// Decrypts an authentication blob received from Spotify Connect discovery.
+    ///
+    /// The blob is encrypted with AES-192-ECB using a key derived from the device ID
+    /// and username via PBKDF2-HMAC-SHA1.
     #[expect(deprecated)]
     pub fn with_blob(
         username: impl Into<String>,

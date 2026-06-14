@@ -1,3 +1,9 @@
+//! Login5 authentication protocol.
+//!
+//! Login5 is the mobile-oriented authentication protocol used by Android and iOS
+//! clients. It supports password-based and stored-credential authentication with
+//! hashcash proof-of-work challenges.
+
 use crate::config::OS;
 use crate::spclient::CLIENT_TOKEN;
 use crate::token::Token;
@@ -131,8 +137,8 @@ impl Login5Manager {
     /// This request doesn't require a connected session as it is the entrypoint for android or ios
     ///
     /// This request will only work when:
-    /// - client_id => android or ios | can be easily adjusted in [SessionConfig::default_for_os]
-    /// - user-agent => android or ios | has to be adjusted in [HttpClient::new](crate::http_client::HttpClient::new)
+    /// - client_id => android or ios | can be easily adjusted in `SessionConfig`
+    /// - user-agent => android or ios | has to be adjusted in [`HttpClient`](crate::http_client::HttpClient)
     pub async fn login(
         &self,
         id: impl Into<String>,

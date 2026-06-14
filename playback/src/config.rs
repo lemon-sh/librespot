@@ -1,3 +1,6 @@
+//! Playback configuration types.
+//!
+//! Configures bitrate, audio format, normalisation, and volume control.
 use std::{mem, path::PathBuf, str::FromStr, time::Duration};
 
 pub use crate::dither::{DithererBuilder, TriangularDitherer, mk_ditherer};
@@ -101,28 +104,39 @@ impl FromStr for NormalisationMethod {
     }
 }
 
+/// Configuration for the [`Player`](crate::player::Player).
 #[derive(Clone)]
 pub struct PlayerConfig {
+    /// Audio bitrate (96, 160, or 320 kbps).
     pub bitrate: Bitrate,
+    /// Enable gapless playback between tracks.
     pub gapless: bool,
+    /// Enable raw Ogg passthrough (no decoding).
     pub passthrough: bool,
 
+    /// Enable volume normalisation.
     pub normalisation: bool,
+    /// Normalisation type (track, album, or auto).
     pub normalisation_type: NormalisationType,
+    /// Normalisation method (basic or dynamic).
     pub normalisation_method: NormalisationMethod,
+    /// Pre-gain in dB applied before normalisation.
     pub normalisation_pregain_db: f64,
+    /// Threshold in dBFS above which normalisation kicks in.
     pub normalisation_threshold_dbfs: f64,
+    /// Attack time constant for the normalisation gain.
     pub normalisation_attack_cf: f64,
+    /// Release time constant for the normalisation gain.
     pub normalisation_release_cf: f64,
+    /// Knee width in dB for the normalisation compressor.
     pub normalisation_knee_db: f64,
 
+    /// Directories to search for local files.
     pub local_file_directories: Vec<PathBuf>,
 
-    // pass function pointers so they can be lazily instantiated *after* spawning a thread
-    // (thereby circumventing Send bounds that they might not satisfy)
+    /// Optional ditherer builder. Default: triangular dithering.
     pub ditherer: Option<DithererBuilder>,
-    /// Setting this will enable periodically sending events during playback informing about the playback position
-    /// To consume the PlayerEvent::PositionChanged event, listen to events via `Player::get_player_event_channel()``
+    /// Optional interval for periodic position update events.
     pub position_update_interval: Option<Duration>,
 }
 

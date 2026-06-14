@@ -1,3 +1,24 @@
+//! Spotify metadata types (tracks, albums, artists, episodes, shows, lyrics).
+//!
+//! This crate provides the [`Metadata`] trait and concrete types for fetching
+//! and parsing Spotify's protobuf-encoded metadata.
+//!
+//! # Usage
+//!
+//! ```rust,no_run
+//! # use librespot_core::Session;
+//! # use librespot_metadata::{Track, Metadata};
+//! # async fn example(session: Session) -> Result<(), librespot_core::Error> {
+//! let uri = "spotify:track:4uLU6hMCjMI75M1A2tKUQC".parse().unwrap();
+//! let track = Track::get(&session, &uri).await?;
+//! println!("{} by {:?}", track.name, track.artists);
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! The [`AudioItem`](audio::AudioItem) type provides a unified representation
+//! for tracks and episodes, used by the playback pipeline.
+
 #[macro_use]
 extern crate log;
 
@@ -39,14 +60,21 @@ pub use playlist::Playlist;
 pub use show::Show;
 pub use track::Track;
 
+/// Trait for fetching and parsing Spotify metadata.
+///
+/// Implementors can be fetched from the server via [`Metadata::get`].
+/// The trait abstracts over the protobuf wire format: each type specifies
+/// its corresponding protobuf `Message` type and
+/// provides a [`parse`](Metadata::parse) method to convert it.
 #[async_trait]
 pub trait Metadata: Send + Sized + 'static {
+    /// The protobuf message type used for deserialization.
     type Message: protobuf::Message + std::fmt::Debug;
 
-    // Request a protobuf
+    /// Fetches the raw protobuf bytes from the server.
     async fn request(session: &Session, id: &SpotifyUri) -> RequestResult;
 
-    // Request a metadata struct
+    /// Fetches and parses the metadata for the given resource URI.
     async fn get(session: &Session, id: &SpotifyUri) -> Result<Self, Error> {
         let response = Self::request(session, id).await?;
         let msg = Self::Message::parse_from_bytes(&response)?;
@@ -54,5 +82,6 @@ pub trait Metadata: Send + Sized + 'static {
         Self::parse(&msg, id)
     }
 
+    /// Parses a protobuf message into this metadata type.
     fn parse(msg: &Self::Message, _: &SpotifyUri) -> Result<Self, Error>;
 }

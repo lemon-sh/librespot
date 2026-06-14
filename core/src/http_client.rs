@@ -1,3 +1,10 @@
+//! HTTP client with rate limiting and proxy support.
+//!
+//! The [`HttpClient`] wraps a hyper client with per-host rate limiting (via
+//! [`governor`](https://docs.rs/governor)) and optional HTTPS proxy support.
+//! It is used by [`SpClient`](crate::spclient::SpClient) and
+//! [`TokenProvider`](crate::token::TokenProvider).
+
 use std::{
     sync::OnceLock,
     time::{Duration, Instant},

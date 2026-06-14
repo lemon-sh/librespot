@@ -1,3 +1,10 @@
+//! Audio key management.
+//!
+//! Each encrypted audio file on Spotify's CDN is protected by a 128-bit AES key.
+//! The [`AudioKeyManager`] requests these keys from the server over the Shannon
+//! connection. The returned [`AudioKey`] is used by `AudioDecrypt` to decrypt
+//! audio data.
+
 use std::{collections::HashMap, io::Write, time::Duration};
 
 use byteorder::{BigEndian, ByteOrder, WriteBytesExt};

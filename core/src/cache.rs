@@ -1,3 +1,13 @@
+//! Persistent caching for credentials, volume, and audio files.
+//!
+//! The [`Cache`] stores:
+//! - **Credentials** — serialized to `credentials.json` for automatic re-login
+//! - **Volume** — last volume level
+//! - **Audio files** — encrypted audio data keyed by [`FileId`], with
+//!   optional LRU eviction via a size limit
+//!
+//! Pass a `Cache` to `Session::new` to enable caching.
+
 #[cfg(unix)]
 use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
 use std::{
@@ -259,7 +269,10 @@ impl FsSizeLimiter {
     }
 }
 
-/// A cache for volume, credentials and audio files.
+/// A cache for credentials, volume settings, and audio files.
+///
+/// Create with [`Cache::new`], passing optional directory paths for each category.
+/// Audio file caching supports an optional size limit with LRU eviction.
 #[derive(Clone)]
 pub struct Cache {
     credentials_location: Option<PathBuf>,

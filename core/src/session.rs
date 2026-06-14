@@ -119,13 +119,47 @@ struct SessionInternal {
 
 /// A shared reference to a Spotify session.
 ///
-/// After instantiating, you need to login via [Session::connect].
-/// You can either implement the whole playback logic yourself by using
-/// this structs interface directly or hand it to a
-/// `Player`.
+/// `Session` is the central entry point for all communication with Spotify's servers.
+/// It holds the authenticated connection, configuration, and lazily-initialized
+/// sub-managers (`ApResolver`, `SpClient`, `AudioKeyManager`,
+/// etc.).
 ///
-/// *Note*: [Session] instances cannot yet be reused once invalidated. After
-/// an unexpectedly closed connection, you'll need to create a new [Session].
+/// # Creating a session
+///
+/// ```rust,no_run
+/// # use librespot_core::{Session, SessionConfig, authentication::Credentials};
+/// # async fn example() -> Result<(), librespot_core::Error> {
+/// let config = SessionConfig::default();
+/// let cache = None;
+/// let session = Session::new(config, cache);
+///
+/// let creds = Credentials::with_password("user", "pass");
+/// session.connect(creds, true).await?;
+/// # Ok(())
+/// # }
+/// ```
+///
+/// # Usage
+///
+/// Hand the session to a [`librespot_playback::Player`](https://docs.rs/librespot_playback) for
+/// audio playback, or use [`librespot_connect::Spirc`](https://docs.rs/librespot_connect) for
+/// Spotify Connect control. You can also use the sub-managers directly:
+///
+/// ```rust,no_run
+/// # use librespot_core::Session;
+/// # async fn example(session: Session) {
+/// // Fetch metadata via the HTTP API client
+/// let metadata = session.spclient().get_track_metadata(&"spotify:track:4uLU6hMCjMI75M1A2tKUQC".parse().unwrap()).await;
+///
+/// // Request an audio decryption key
+/// let key = session.audio_key().request(&Default::default(), &Default::default()).await;
+/// # }
+/// ```
+///
+/// # Reconnection
+///
+/// `Session` instances cannot be reused after the connection is invalidated.
+/// After a disconnect, create a new `Session` and call [`connect`](Session::connect) again.
 #[derive(Clone)]
 pub struct Session(Arc<SessionInternal>);
 
@@ -203,6 +237,15 @@ impl Session {
         Ok((reusable_credentials, transport))
     }
 
+    /// Authenticates with Spotify and opens the connection.
+    ///
+    /// Resolves an access point via [`ApResolver`], performs the Shannon-encrypted handshake,
+    /// and spawns the packet dispatch and sender tasks. If `store_credentials` is `true` and
+    /// a [`Cache`] is configured, the returned reusable credentials are saved for future logins.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if all access point retries fail or authentication is rejected.
     pub async fn connect(
         &self,
         credentials: Credentials,
@@ -287,50 +330,74 @@ impl Session {
         Ok(())
     }
 
+    /// Returns the access point resolver, creating it if needed.
     pub fn apresolver(&self) -> &ApResolver {
         self.0
             .apresolver
             .get_or_init(|| ApResolver::new(self.weak()))
     }
 
+    /// Returns the audio key manager, creating it if needed.
+    ///
+    /// Used to request AES keys for decrypting audio streams.
     pub fn audio_key(&self) -> &AudioKeyManager {
         self.0
             .audio_key
             .get_or_init(|| AudioKeyManager::new(self.weak()))
     }
 
+    /// Returns the channel manager, creating it if needed.
+    ///
+    /// Channels carry binary data streams (e.g., audio packets) over the Shannon connection.
     pub fn channel(&self) -> &ChannelManager {
         self.0
             .channel
             .get_or_init(|| ChannelManager::new(self.weak()))
     }
 
+    /// Returns the HTTP client with rate-limiting and proxy support.
     pub fn http_client(&self) -> &HttpClient {
         &self.0.http_client
     }
 
+    /// Returns the Mercury manager, creating it if needed.
+    ///
+    /// Mercury is the legacy pub/sub protocol for metadata and messaging.
     pub fn mercury(&self) -> &MercuryManager {
         self.0
             .mercury
             .get_or_init(|| MercuryManager::new(self.weak()))
     }
 
+    /// Returns the Dealer manager, creating it if needed.
+    ///
+    /// The Dealer is a WebSocket-based message bus for real-time commands
+    /// (e.g., Spotify Connect state updates).
     pub fn dealer(&self) -> &DealerManager {
         self.0
             .dealer
             .get_or_init(|| DealerManager::new(self.weak()))
     }
 
+    /// Returns the Spotify Web API client, creating it if needed.
+    ///
+    /// Used for metadata requests, audio storage URLs, and other HTTP endpoints.
     pub fn spclient(&self) -> &SpClient {
         self.0.spclient.get_or_init(|| SpClient::new(self.weak()))
     }
 
+    /// Returns the token provider, creating it if needed.
+    ///
+    /// Manages access tokens via the keymaster endpoint.
     pub fn token_provider(&self) -> &TokenProvider {
         self.0
             .token_provider
             .get_or_init(|| TokenProvider::new(self.weak()))
     }
 
+    /// Returns the Login5 manager, creating it if needed.
+    ///
+    /// Login5 is the mobile-oriented authentication protocol.
     pub fn login5(&self) -> &Login5Manager {
         self.0
             .login5
@@ -373,6 +440,7 @@ impl Session {
         }
     }
 
+    /// Sends a raw packet to Spotify over the Shannon-encrypted connection.
     pub fn send_packet(&self, cmd: PacketType, data: Vec<u8>) -> Result<(), Error> {
         match self.0.tx_connection.get() {
             Some(tx) => Ok(tx.send((cmd as u8, data))?),
@@ -380,10 +448,12 @@ impl Session {
         }
     }
 
+    /// Returns the cache, if one was configured.
     pub fn cache(&self) -> Option<&Arc<Cache>> {
         self.0.cache.as_ref()
     }
 
+    /// Returns the session configuration.
     pub fn config(&self) -> &SessionConfig {
         &self.0.config
     }
@@ -391,6 +461,7 @@ impl Session {
     // This clones a fairly large struct, so use a specific getter or setter unless
     // you need more fields at once, in which case this can spare multiple `read`
     // locks.
+    /// Returns the user data (username, country, attributes) for the authenticated user.
     pub fn user_data(&self) -> UserData {
         self.0
             .data
@@ -420,6 +491,7 @@ impl Session {
         );
     }
 
+    /// Returns the device ID from the session configuration.
     pub fn device_id(&self) -> &str {
         &self.config().device_id
     }
@@ -631,10 +703,15 @@ impl Session {
             .cloned()
     }
 
+    /// Creates a weak reference to this session, used by sub-managers to avoid reference cycles.
     fn weak(&self) -> SessionWeak {
         SessionWeak(Arc::downgrade(&self.0))
     }
 
+    /// Invalidates this session and shuts down the Mercury and Channel managers.
+    ///
+    /// After calling this, [`is_invalid`](Session::is_invalid) returns `true` and
+    /// the session should not be reused.
     pub fn shutdown(&self) {
         debug!("Shutdown: Invalidating session");
         self.0.data.write().expect(SESSION_DATA_POISON_MSG).invalid = true;
@@ -642,11 +719,18 @@ impl Session {
         self.channel().shutdown();
     }
 
+    /// Returns `true` if this session has been invalidated (e.g., after [`shutdown`](Session::shutdown)).
     pub fn is_invalid(&self) -> bool {
         self.0.data.read().expect(SESSION_DATA_POISON_MSG).invalid
     }
 }
 
+/// A weak reference to a [`Session`].
+///
+/// Sub-managers hold `SessionWeak` to avoid preventing session cleanup.
+/// Call `upgrade()` to obtain a strong reference.
+/// This panics if the session has already been dropped — in practice this
+/// should never happen because components are dropped before the session.
 #[derive(Clone)]
 pub struct SessionWeak(Weak<SessionInternal>);
 

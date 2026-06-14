@@ -1,3 +1,5 @@
+//! Configuration types for [`Session`](crate::Session).
+
 use std::{fmt, path::PathBuf, str::FromStr};
 
 use librespot_protocol::devices::DeviceType as ProtoDeviceType;
@@ -21,13 +23,22 @@ pub fn os_version() -> String {
     sysinfo::System::os_version().unwrap_or("0".into())
 }
 
+/// Configuration for a [`Session`](crate::Session).
+///
+/// Use [`SessionConfig::default`] to get sensible defaults, or customize individual fields.
 #[derive(Clone, Debug)]
 pub struct SessionConfig {
+    /// OAuth client ID. Defaults to the keymaster client ID for desktop.
     pub client_id: String,
+    /// Unique device identifier. Defaults to a random UUID.
     pub device_id: String,
+    /// Optional HTTP proxy URL.
     pub proxy: Option<Url>,
+    /// Optional port override for access point connections.
     pub ap_port: Option<u16>,
+    /// Temporary directory for cached data.
     pub tmp_dir: PathBuf,
+    /// Override autoplay setting. `None` uses the server-side user attribute.
     pub autoplay: Option<bool>,
 }
 
@@ -58,6 +69,9 @@ impl Default for SessionConfig {
     }
 }
 
+/// The type of device this instance represents in Spotify Connect.
+///
+/// Affects the icon shown in the Spotify client's device picker.
 #[derive(Clone, Copy, Debug, Hash, PartialOrd, Ord, PartialEq, Eq, Default)]
 pub enum DeviceType {
     Unknown = 0,

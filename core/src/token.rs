@@ -1,3 +1,9 @@
+//! Access token management.
+//!
+//! The [`TokenProvider`] obtains and caches OAuth access tokens via the keymaster
+//! endpoint. Tokens are scoped (e.g., `playlist-read-private`, `streaming`) and
+//! expire after a configurable duration.
+
 // Ported from librespot-java. Relicensed under MIT with permission.
 
 // Known scopes:

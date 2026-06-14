@@ -75,7 +75,10 @@ impl From<StateError> for Error {
     }
 }
 
-/// Configuration of the connect device
+/// Configuration for the Connect device.
+///
+/// Passed to [`Spirc::new`](crate::Spirc::new) to configure how the device
+/// appears in Spotify's device picker.
 #[derive(Debug, Clone)]
 pub struct ConnectConfig {
     /// The name of the connect device (default: librespot)

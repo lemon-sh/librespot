@@ -1,3 +1,8 @@
+//! Album metadata.
+//!
+//! An [`Album`] represents a Spotify album with its artists, tracks, cover art,
+//! release date, and copyright information.
+
 use std::{
     fmt::Debug,
     ops::{Deref, DerefMut},

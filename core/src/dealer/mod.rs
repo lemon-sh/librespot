@@ -1,3 +1,9 @@
+//! WebSocket-based real-time message bus.
+//!
+//! The Dealer maintains a persistent WebSocket connection to `dealer.spotify.com`
+//! and dispatches incoming messages to registered handlers. It is used primarily
+//! by `Spirc` for Spotify Connect state updates.
+
 pub mod manager;
 mod maps;
 pub mod protocol;

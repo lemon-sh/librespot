@@ -32,9 +32,13 @@ pub use crate::core::authentication::Credentials;
 /// Determining the icon in the list of available devices.
 pub use crate::core::config::DeviceType;
 
+/// Events emitted by the discovery server.
 pub enum DiscoveryEvent {
+    /// Credentials received from a Spotify client that selected this device.
     Credentials(Credentials),
+    /// An error occurred in the HTTP server.
     ServerError(DiscoveryError),
+    /// An error occurred in the mDNS/DNS-SD service.
     ZeroconfError(DiscoveryError),
 }
 

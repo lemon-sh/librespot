@@ -1,3 +1,11 @@
+//! Typed Spotify URIs.
+//!
+//! A [`SpotifyUri`] is a parsed `spotify:{type}:{id}` URI that knows the item type
+//! (track, album, artist, etc.). Use [`SpotifyUri::from_uri`] to parse a URI string,
+//! or [`SpotifyUri::to_uri`] to format one back.
+//!
+//! For the raw 128-bit numeric ID, see [`SpotifyId`].
+
 use crate::{Error, SpotifyId};
 use std::{borrow::Cow, fmt, str::FromStr, time::Duration};
 use thiserror::Error;
@@ -29,6 +37,11 @@ impl From<SpotifyUriError> for Error {
 
 pub type SpotifyUriResult = Result<SpotifyUri, Error>;
 
+/// A parsed Spotify URI with its item type.
+///
+/// Variants carry the underlying [`SpotifyId`] (or, for local files, the
+/// artist/album/track/duration fields). Unknown item types are preserved
+/// as [`SpotifyUri::Unknown`].
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub enum SpotifyUri {
     Album {
@@ -114,10 +127,10 @@ impl SpotifyUri {
     /// can be arbitrary while `{id}` is in a format that varies based on the `{type}`:
     ///
     ///  - For most item types, a 22-character long, base62 encoded Spotify ID is expected.
-    ///  - For local files, an arbitrary length string with the fields
-    ///    `{artist}:{album_title}:{track_title}:{duration_in_seconds}` is expected.
-    ///
-    /// Spotify URI: https://developer.spotify.com/documentation/web-api/concepts/spotify-uris-ids
+     ///  - For local files, an arbitrary length string with the fields
+     ///    `{artist}:{album_title}:{track_title}:{duration_in_seconds}` is expected.
+     ///
+     /// [Spotify URI]: https://developer.spotify.com/documentation/web-api/concepts/spotify-uris-ids
     pub fn from_uri(src: &str) -> SpotifyUriResult {
         // Basic: `spotify:{type}:{id}`
         // Named: `spotify:user:{user}:{type}:{id}`

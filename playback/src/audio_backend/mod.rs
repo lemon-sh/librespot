@@ -1,3 +1,9 @@
+//! Audio output backends.
+//!
+//! Backends implement the [`Sink`] trait to write decoded audio to an output device.
+//! Available backends are feature-gated (e.g., `rodio-backend`, `alsa-backend`).
+//!
+//! The default backend is `rodio` (cross-platform via cpal).
 use crate::config::AudioFormat;
 use crate::convert::Converter;
 use crate::decoder::AudioPacket;
@@ -23,13 +29,20 @@ pub trait Open {
     fn open(_: Option<String>, format: AudioFormat) -> Self;
 }
 
+/// Trait for audio output backends.
+///
+/// Implement this trait to send decoded audio to an output device.
+/// Use the `sink_as_bytes!` macro for backends that accept raw byte slices.
 pub trait Sink {
+    /// Opens the audio device. Called once before playback starts.
     fn start(&mut self) -> SinkResult<()> {
         Ok(())
     }
+    /// Closes the audio device. Called when playback stops.
     fn stop(&mut self) -> SinkResult<()> {
         Ok(())
     }
+    /// Writes a decoded audio packet to the output.
     fn write(&mut self, packet: AudioPacket, converter: &mut Converter) -> SinkResult<()>;
 }
 

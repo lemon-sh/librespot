@@ -1,9 +1,19 @@
+//! Audio and image file identifiers.
+//!
+//! A [`FileId`] is a 20-byte SHA1 hash that uniquely identifies an audio file
+//! (or image) on Spotify's CDN. It is used by `AudioFile` to locate and fetch
+//! encrypted audio data.
+
 use std::fmt::{self, Write};
 
 use librespot_protocol as protocol;
 
 const RAW_LEN: usize = 20;
 
+/// A 20-byte identifier for an audio or image file on Spotify's CDN.
+///
+/// Encoded as 40-character hex strings. Used by the audio fetching pipeline
+/// to locate encrypted audio chunks.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FileId(pub [u8; RAW_LEN]);
 

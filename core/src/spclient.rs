@@ -1,3 +1,9 @@
+//! Spotify Web API client (spclient).
+//!
+//! The [`SpClient`] communicates with Spotify's HTTP-based spclient endpoints
+//! for metadata requests, audio storage URLs, connect state updates, and more.
+//! It handles rate limiting, client tokens, and request signing.
+
 use std::{
     fmt::Write,
     time::{Duration, SystemTime},

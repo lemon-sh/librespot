@@ -1,3 +1,5 @@
+//! AES-128-CTR decryption for audio streams.
+
 use std::io;
 
 use aes::cipher::{KeyIvInit, StreamCipher, StreamCipherSeek};
@@ -10,6 +12,10 @@ const AUDIO_AESIV: [u8; 16] = [
     0x72, 0xe0, 0x67, 0xfb, 0xdd, 0xcb, 0xcf, 0x77, 0xeb, 0xe8, 0xbc, 0x64, 0x3f, 0x63, 0x0d, 0x93,
 ];
 
+/// Decrypts an audio stream using AES-128-CTR.
+///
+/// Wraps any [`Read`](io::Read) source and applies the decryption cipher on the fly.
+/// If no key is provided (e.g., for unencrypted files), data passes through unchanged.
 pub struct AudioDecrypt<T: io::Read> {
     // a `None` cipher is a convenience to make `AudioDecrypt` pass files unaltered
     cipher: Option<Aes128Ctr>,

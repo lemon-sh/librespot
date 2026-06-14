@@ -1,3 +1,9 @@
+//! Access point resolution.
+//!
+//! Resolves hostnames for Spotify's access points (APs), dealer, and spclient
+//! endpoints. The [`ApResolver`] is used by [`Session::connect`](crate::Session::connect)
+//! to find a server to connect to.
+
 use std::collections::VecDeque;
 
 use bytes::Bytes;

@@ -145,7 +145,10 @@ const VOLUME_UPDATE_DELAY: Duration = Duration::from_millis(500);
 // to reduce updates to remote, we group some request by waiting for a set amount of time
 const UPDATE_STATE_DELAY: Duration = Duration::from_millis(200);
 
-/// The spotify connect handle
+/// Handle for controlling the Spotify Connect device.
+///
+/// Created by [`Spirc::new`]. Sends commands to the internal event loop.
+/// All methods are no-ops if this device is not the active Connect device.
 pub struct Spirc {
     commands: mpsc::UnboundedSender<SpircCommand>,
 }

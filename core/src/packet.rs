@@ -1,3 +1,8 @@
+//! Spotify packet type definitions.
+//!
+//! Defines the [`PacketType`] enum for all packet types sent over the
+//! Shannon-encrypted connection.
+
 // Ported from librespot-java. Relicensed under MIT with permission.
 
 use num_derive::{FromPrimitive, ToPrimitive};

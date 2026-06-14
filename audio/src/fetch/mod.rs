@@ -1,3 +1,9 @@
+//! HTTP range-request based audio file fetching.
+//!
+//! The [`AudioFile`] enum handles both cached (local) and streaming (network) files.
+//! For streaming, it fetches encrypted audio chunks from Spotify's CDN using HTTP
+//! range requests, with adaptive pre-fetching based on measured throughput.
+
 mod receive;
 
 use std::{
@@ -59,6 +65,10 @@ impl From<AudioFileError> for Error {
     }
 }
 
+/// Configuration for the audio fetching pipeline.
+///
+/// Controls pre-fetching behavior, download block sizes, and timeout thresholds.
+/// Set globally via [`AudioFetchParams::set`] before creating any audio files.
 #[derive(Clone)]
 pub struct AudioFetchParams {
     /// The minimum size of a block that is requested from the Spotify servers in one request.
@@ -129,8 +139,13 @@ impl AudioFetchParams {
     }
 }
 
+/// An audio file that is either cached locally or being streamed from Spotify's CDN.
+///
+/// Both variants implement [`Read`](io::Read) and [`Seek`](io::Seek).
 pub enum AudioFile {
+    /// A locally cached audio file.
     Cached(fs::File),
+    /// An audio file being streamed over HTTP with adaptive pre-fetching.
     Streaming(AudioFileStreaming),
 }
 
@@ -148,6 +163,11 @@ pub enum StreamLoaderCommand {
     Close,        // terminate and don't load any more data
 }
 
+/// Controls the streaming audio loader.
+///
+/// Provides methods to check which data is available, request specific ranges,
+/// and monitor download progress. Used by the playback pipeline to coordinate
+/// pre-fetching with decoding.
 #[derive(Clone)]
 pub struct StreamLoaderController {
     channel_tx: Option<mpsc::UnboundedSender<StreamLoaderCommand>>,

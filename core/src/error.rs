@@ -1,3 +1,9 @@
+//! Unified error type for librespot.
+//!
+//! The `Error` struct wraps an [`ErrorKind`] (modeled after gRPC status codes) and the
+//! original error. Use the constructor methods ([`Error::not_found`],
+//! [`Error::unavailable`], etc.) to create typed errors.
+
 use std::{
     error, fmt,
     num::{ParseIntError, TryFromIntError},
@@ -21,12 +27,21 @@ use url::ParseError;
 
 use librespot_oauth::OAuthError;
 
+/// The unified error type for all librespot operations.
+///
+/// Contains an [`ErrorKind`] category and the underlying error. Construct via
+/// the typed helpers: [`Error::not_found`], [`Error::unavailable`], etc.
 #[derive(Debug)]
 pub struct Error {
+    /// The error category.
     pub kind: ErrorKind,
+    /// The underlying error.
     pub error: Box<dyn error::Error + Send + Sync>,
 }
 
+/// Error category, modeled after gRPC status codes.
+///
+/// Each variant has a numeric discriminant matching the gRPC specification.
 #[derive(Clone, Copy, Debug, Eq, Error, Hash, Ord, PartialEq, PartialOrd)]
 pub enum ErrorKind {
     #[error("The operation was cancelled by the caller")]

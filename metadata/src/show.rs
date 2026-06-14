@@ -1,3 +1,8 @@
+//! Podcast show metadata.
+//!
+//! A [`Show`] represents a Spotify podcast show (series) with its episodes,
+//! publisher, and media type.
+
 use std::fmt::Debug;
 
 use crate::{

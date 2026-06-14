@@ -1,3 +1,8 @@
+//! Track metadata.
+//!
+//! A [`Track`] represents a Spotify track with its name, artists, album,
+//! duration, file formats, and other properties.
+
 use std::{
     fmt::Debug,
     ops::{Deref, DerefMut},

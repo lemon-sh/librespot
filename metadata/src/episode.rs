@@ -1,3 +1,8 @@
+//! Podcast episode metadata.
+//!
+//! An [`Episode`] represents a Spotify podcast episode with its audio files,
+//! description, show name, and publication date.
+
 use std::{
     fmt::Debug,
     ops::{Deref, DerefMut},

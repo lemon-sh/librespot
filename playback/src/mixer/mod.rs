@@ -1,3 +1,10 @@
+//! Volume control via mixer backends.
+//!
+//! The [`Mixer`] trait provides volume get/set. The [`VolumeGetter`] trait
+//! supplies a soft volume attenuation factor to the player.
+//!
+//! Available mixers: `SoftMixer` (default),
+//! `AlsaMixer` (feature-gated).
 use crate::config::VolumeCtrl;
 use librespot_core::Error;
 use std::sync::Arc;
@@ -7,20 +14,27 @@ use self::mappings::MappedCtrl;
 
 pub struct NoOpVolume;
 
+/// Trait for volume control backends.
 pub trait Mixer: Send + Sync {
+    /// Creates a new mixer instance with the given configuration.
     fn open(config: MixerConfig) -> Result<Self, Error>
     where
         Self: Sized;
 
+    /// Returns the current volume (0–65535).
     fn volume(&self) -> u16;
+    /// Sets the volume (0–65535).
     fn set_volume(&self, volume: u16);
 
+    /// Returns a soft volume getter for normalisation. Default: no-op.
     fn get_soft_volume(&self) -> Box<dyn VolumeGetter + Send> {
         Box::new(NoOpVolume)
     }
 }
 
+/// Provides a soft volume attenuation factor for normalisation.
 pub trait VolumeGetter {
+    /// Returns the attenuation factor (0.0 = silent, 1.0 = full volume).
     fn attenuation_factor(&self) -> f64;
 }
 

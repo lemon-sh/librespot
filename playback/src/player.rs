@@ -54,6 +54,13 @@ const LOAD_HANDLES_POISON_MSG: &str = "load handles mutex should not be poisoned
 
 pub type PlayerResult = Result<(), Error>;
 
+/// The main player handle.
+///
+/// `Player` manages track loading, decoding, and audio output. It runs an
+/// internal event loop on a separate thread and communicates via channels.
+///
+/// Create a player with [`Player::new`], then use [`load`](Player::load) to
+/// start playback. Subscribe to [`PlayerEvent`]s for state changes.
 pub struct Player {
     commands: Option<mpsc::UnboundedSender<PlayerCommand>>,
     thread_handle: Option<thread::JoinHandle<()>>,
@@ -153,6 +160,10 @@ pub struct QueueTrack {
     pub provider: String,
 }
 
+/// Events emitted by the player during playback.
+///
+/// Subscribe via [`Player::get_player_event_channel`]. Events carry contextual data like
+/// the track URI, play request ID, and position.
 #[derive(Debug, Clone)]
 pub enum PlayerEvent {
     // Play request id changed

@@ -1,3 +1,12 @@
+//! Spotify resource identifiers.
+//!
+//! A [`SpotifyId`] is a 128-bit identifier that can be encoded as:
+//! - **Base62** — 22 characters, the canonical format used in URIs and APIs
+//! - **Base16** — 32 characters (hex)
+//! - **Raw** — 16 bytes in big-endian order
+//!
+//! For typed URIs (e.g., `spotify:track:...`), see [`SpotifyUri`].
+
 use std::fmt;
 
 use thiserror::Error;
@@ -7,8 +16,15 @@ use crate::{Error, SpotifyUri};
 // re-export FileId for historic reasons, when it was part of this mod
 pub use crate::FileId;
 
+/// A 128-bit Spotify resource identifier.
+///
+/// SpotifyIds are the raw numeric identifiers for tracks, albums, artists, etc.
+/// They can be converted to/from base62, base16, and raw byte representations.
+///
+/// For typed URIs like `spotify:track:4uLU6hMCjMI75M1A2tKUQC`, see [`SpotifyUri`].
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SpotifyId {
+    /// The raw 128-bit identifier.
     pub id: u128,
 }
 

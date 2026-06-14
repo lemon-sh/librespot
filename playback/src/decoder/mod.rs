@@ -1,3 +1,11 @@
+//! Audio decoders.
+//!
+//! Decoders convert compressed audio (Ogg Vorbis, FLAC, MP3) into raw samples.
+//! The [`AudioDecoder`] trait abstracts over decoder implementations.
+//!
+//! Available decoders:
+//! - [`SymphoniaDecoder`] — multi-format via Symphonia (default)
+//! - `PassthroughDecoder` — raw Ogg passthrough (feature-gated)
 use std::ops::Deref;
 
 use thiserror::Error;
@@ -74,8 +82,11 @@ impl Deref for AudioPacketPosition {
     }
 }
 
+/// Trait for audio decoders.
 pub trait AudioDecoder {
+    /// Seeks to the given position in milliseconds. Returns the actual position.
     fn seek(&mut self, position_ms: u32) -> Result<u32, DecoderError>;
+    /// Returns the next decoded audio packet, or `None` at end of stream.
     fn next_packet(&mut self) -> DecoderResult<Option<(AudioPacketPosition, AudioPacket)>>;
 }
 

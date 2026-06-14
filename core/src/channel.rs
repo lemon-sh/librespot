@@ -1,3 +1,9 @@
+//! Binary data streaming channels.
+//!
+//! Channels multiplex binary data streams (e.g., audio packets) over the
+//! Shannon-encrypted connection. Each channel is identified by a `u16` ID and
+//! delivers [`ChannelData`] and [`ChannelHeaders`] via a [`Channel`] handle.
+
 use std::{
     collections::HashMap,
     fmt,

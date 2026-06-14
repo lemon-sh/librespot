@@ -1,3 +1,8 @@
+//! Artist metadata.
+//!
+//! An [`Artist`] represents a Spotify artist with their top tracks,
+//! albums, biographies, and related artists.
+
 use std::{
     fmt::Debug,
     ops::{Deref, DerefMut},

@@ -3,7 +3,7 @@
 //! with PKCE.
 //!
 //! Assuming sufficient scopes, the returned access token may be used with Spotify's
-//! Web API, and/or to establish a new Session with [`librespot_core`].
+//! Web API, and/or to establish a new Session with `librespot_core`.
 //!
 //! The authorization code flow is an interactive process which requires a web browser
 //! to complete. The resulting code must then be provided back from the browser to this
@@ -221,7 +221,11 @@ fn get_socket_address(redirect_uri: &str) -> Option<SocketAddr> {
     }
 }
 
-/// Struct that handle obtaining and refreshing access tokens.
+/// Handles obtaining and refreshing Spotify access tokens via OAuth PKCE.
+///
+/// Use [`OAuthClientBuilder`] to create an instance, then call
+/// [`get_access_token`](OAuthClient::get_access_token) (sync) or
+/// [`get_access_token_async`](OAuthClient::get_access_token_async) (async).
 pub struct OAuthClient {
     scopes: Vec<String>,
     redirect_uri: String,

@@ -1,3 +1,10 @@
+//! Mercury pub/sub protocol (legacy).
+//!
+//! Mercury is Spotify's legacy binary messaging protocol for metadata
+//! requests and subscriptions. New code should prefer
+//! [`SpClient`](crate::spclient::SpClient) for HTTP-based requests and
+//! `DealerManager` for real-time subscriptions.
+
 use std::{
     collections::HashMap,
     future::Future,

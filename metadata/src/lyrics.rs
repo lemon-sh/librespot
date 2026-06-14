@@ -1,3 +1,8 @@
+//! Lyrics metadata.
+//!
+//! Provides synchronized and unsynchronized lyrics for tracks,
+//! fetched via the [`SpClient`](librespot_core::spclient::SpClient).
+
 use bytes::Bytes;
 
 use librespot_core::{Error, FileId, Session, SpotifyId};
@@ -28,11 +33,15 @@ impl TryFrom<&Bytes> for Lyrics {
     }
 }
 
+/// Synchronized or unsynchronized lyrics for a track.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Lyrics {
+    /// Color theme for displaying lyrics.
     pub colors: Colors,
+    /// Whether a vocal-removal version is available.
     pub has_vocal_removal: bool,
+    /// The lyrics content.
     pub lyrics: LyricsInner,
 }
 
